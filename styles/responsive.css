@@ -1,0 +1,1082 @@
+/* ==========================================================================
+   TRADE CAR - VENDAS E REPASSE (VAGNER MIYAHIRA)
+   SISTEMA DE WEBDESIGN & RESPONSIVIDADE MOBILE ULTRA-AJUSTADO
+   ========================================================================== */
+
+/* PREVENÇÃO GLOBAL DE OVERFLOW E AJUSTE DE VIEWPORT */
+html, body {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden !important;
+    position: relative;
+    -webkit-text-size-adjust: 100%;
+}
+
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+/* --------------------------------------------------------------------------
+   DESKTOPS MÉDIOS & NOTEBOOKS (<= 1200px)
+   -------------------------------------------------------------------------- */
+@media (max-width: 1200px) {
+    .container {
+        padding: 0 20px;
+    }
+
+    .hero-title {
+        font-size: 2.8rem;
+    }
+
+    .hero-grid {
+        gap: 36px;
+    }
+
+    .founder-grid {
+        gap: 40px;
+    }
+
+    .footer-grid {
+        grid-template-columns: 1.2fr 1fr 1fr 1.2fr;
+        gap: 24px;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   TABLETS & DISPOSITIVOS MÉDIOS (<= 992px)
+   -------------------------------------------------------------------------- */
+@media (max-width: 992px) {
+    .container {
+        padding: 0 16px;
+        width: 100%;
+        max-width: 100%;
+    }
+
+    /* HEADER & NAVBAR TABLET */
+    .navbar {
+        height: 76px;
+        width: 100%;
+        gap: 10px;
+    }
+
+    .brand-logo {
+        flex: 0 1 auto;
+        min-width: 0;
+    }
+
+    .logo-header-img {
+        height: 38px;
+        max-width: 170px;
+        object-fit: contain;
+    }
+
+    .header-actions {
+        gap: 8px;
+        flex-shrink: 0;
+    }
+
+    .header-whatsapp-btn {
+        padding: 8px 12px;
+        font-size: 0.85rem;
+    }
+
+    .header-whatsapp-btn .btn-text {
+        display: none !important;
+    }
+
+    .header-whatsapp-btn {
+        width: 38px;
+        height: 38px;
+        min-width: 38px;
+        border-radius: 50%;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.15rem;
+    }
+
+    .theme-toggle-btn {
+        width: 38px;
+        height: 38px;
+        min-width: 38px;
+    }
+
+    .mobile-menu-btn {
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        min-width: 40px;
+        border-radius: var(--radius-sm);
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border-color);
+        color: var(--text-primary);
+        font-size: 1.2rem;
+        cursor: pointer;
+    }
+
+    .mobile-menu-btn.active {
+        border-color: var(--brand-orange);
+        color: var(--brand-orange-light);
+    }
+
+    /* MENU DRAWER MOBILE (SLIDE-IN MODERNO) */
+    .nav-links {
+        position: fixed;
+        top: 76px;
+        left: 0;
+        width: 100%;
+        height: calc(100vh - 76px);
+        height: calc(100dvh - 76px);
+        background: rgba(7, 10, 17, 0.98);
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: stretch;
+        padding: 24px 20px 40px 20px;
+        gap: 10px;
+        transform: translateX(-100%);
+        transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        overflow-y: auto;
+        z-index: 2000;
+        border-top: 1px solid var(--border-color);
+        box-shadow: var(--shadow-lg);
+    }
+
+    [data-theme="light"] .nav-links {
+        background: rgba(255, 255, 255, 0.98);
+    }
+
+    .nav-links.active {
+        transform: translateX(0);
+    }
+
+    .nav-link {
+        font-size: 1.1rem;
+        font-weight: 600;
+        padding: 14px 16px;
+        border-radius: var(--radius-md);
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border-color);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .nav-link:hover, .nav-link.active {
+        background: rgba(255, 107, 0, 0.12);
+        border-color: var(--brand-orange);
+        color: var(--brand-orange-light);
+    }
+
+    .nav-link::after {
+        display: none;
+    }
+
+    /* HERO SECTION TABLET */
+    .hero-grid {
+        grid-template-columns: 1fr;
+        gap: 36px;
+        text-align: center;
+    }
+
+    .hero-badge {
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .hero-description {
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .hero-cta-group {
+        justify-content: center;
+    }
+
+    .hero-card-main img {
+        height: 340px;
+    }
+
+    /* OUTRAS SEÇÕES TABLET */
+    .founder-grid {
+        grid-template-columns: 1fr;
+        gap: 36px;
+    }
+
+    .founder-frame img {
+        height: 380px;
+    }
+
+    .simulator-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .simulator-result-panel {
+        border-left: none;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .sell-car-grid {
+        grid-template-columns: 1fr;
+        gap: 36px;
+    }
+
+    .patio-card-1, .patio-card-2, .patio-card-3, .patio-card-4 {
+        grid-column: span 12;
+        height: 280px;
+    }
+
+    .footer-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 30px;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   SMARTPHONES (<= 768px) - LAYOUT MOBILE 100% ENCAIXADO
+   -------------------------------------------------------------------------- */
+@media (max-width: 768px) {
+    /* Barra Superior oculta no mobile */
+    .top-announcement-bar {
+        display: none !important;
+    }
+
+    .container {
+        padding: 0 14px;
+        width: 100%;
+        max-width: 100%;
+    }
+
+    /* HEADER & NAVBAR MOBILE */
+    .main-header {
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        background: rgba(7, 10, 17, 0.98);
+        border-bottom: 1px solid var(--border-color);
+        width: 100%;
+    }
+
+    .navbar {
+        height: 66px;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 6px;
+    }
+
+    .brand-logo {
+        flex: 0 1 auto;
+        max-width: 48%;
+        display: flex;
+        align-items: center;
+    }
+
+    .logo-header-img {
+        height: 32px;
+        max-width: 135px;
+        object-fit: contain;
+    }
+
+    .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-shrink: 0;
+    }
+
+    .theme-toggle-btn {
+        width: 34px;
+        height: 34px;
+        min-width: 34px;
+        font-size: 0.85rem;
+    }
+
+    .header-whatsapp-btn {
+        width: 34px;
+        height: 34px;
+        min-width: 34px;
+        font-size: 1.05rem;
+        border-radius: 50%;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .header-whatsapp-btn .btn-text {
+        display: none !important;
+    }
+
+    .mobile-menu-btn {
+        width: 36px;
+        height: 36px;
+        min-width: 36px;
+        font-size: 1.1rem;
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        border-radius: var(--radius-sm);
+        margin: 0;
+    }
+
+    /* MENU DRAWER MOBILE */
+    .nav-links {
+        top: 66px;
+        height: calc(100vh - 66px);
+        height: calc(100dvh - 66px);
+        padding: 18px 14px 30px 14px;
+    }
+
+    .nav-link {
+        font-size: 1rem;
+        padding: 12px 14px;
+    }
+
+    /* HERO SECTION MOBILE */
+    .hero-section {
+        padding: 35px 0 45px 0;
+        width: 100%;
+        overflow: hidden;
+    }
+
+    .hero-grid {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        gap: 24px;
+    }
+
+    .hero-badge {
+        font-size: 0.78rem;
+        padding: 6px 14px;
+        margin-bottom: 16px;
+    }
+
+    .hero-title {
+        font-size: clamp(1.65rem, 5.5vw, 2.15rem);
+        line-height: 1.2;
+        letter-spacing: -0.5px;
+        word-break: break-word;
+        margin-bottom: 14px;
+    }
+
+    .hero-description {
+        font-size: 0.92rem;
+        line-height: 1.6;
+        margin-bottom: 22px;
+    }
+
+    .hero-cta-group {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        width: 100%;
+        margin-bottom: 24px;
+    }
+
+    .hero-cta-group .btn {
+        width: 100%;
+        min-height: 48px;
+        padding: 13px 18px;
+        font-size: 0.95rem;
+    }
+
+    .hero-highlights {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
+        padding-top: 16px;
+        width: 100%;
+    }
+
+    .highlight-item {
+        background: var(--bg-card);
+        padding: 10px 8px;
+        border-radius: var(--radius-md);
+        border: 1px solid var(--border-color);
+        text-align: center;
+    }
+
+    .highlight-item .number {
+        font-size: 1.15rem;
+    }
+
+    .highlight-item .label {
+        font-size: 0.65rem;
+        line-height: 1.2;
+    }
+
+    .hero-visual {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .hero-card-main {
+        width: 100%;
+        border-radius: var(--radius-md);
+    }
+
+    .hero-card-main img {
+        height: 220px;
+        width: 100%;
+        object-fit: cover;
+    }
+
+    .hero-floating-badge {
+        top: 10px;
+        right: 10px;
+        padding: 6px 10px;
+        font-size: 0.72rem;
+        gap: 8px;
+    }
+
+    .hero-floating-badge i {
+        font-size: 1rem;
+    }
+
+    .hero-floating-badge strong {
+        font-size: 0.8rem;
+    }
+
+    .hero-floating-badge span {
+        font-size: 0.68rem;
+    }
+
+    /* SEÇÕES GERAIS MOBILE */
+    .section-header {
+        margin-bottom: 28px;
+        padding: 0 4px;
+    }
+
+    .section-title {
+        font-size: 1.7rem;
+        letter-spacing: -0.3px;
+    }
+
+    .section-subtitle {
+        font-size: 0.88rem;
+        line-height: 1.5;
+    }
+
+    .inventory-section, .patio-showcase-section, .parts-section, 
+    .financing-section, .about-founder-section, .sell-car-section,
+    .testimonials-section, .faq-section {
+        padding: 45px 0;
+        width: 100%;
+        overflow: hidden;
+    }
+
+    /* TOOLBAR DE FILTROS MOBILE (SWIPE TOUCH HORIZONTAL) */
+    .inventory-toolbar, .parts-toolbar {
+        padding: 12px;
+        margin-bottom: 20px;
+        border-radius: var(--radius-md);
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .filter-categories {
+        display: flex;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        gap: 6px;
+        padding-bottom: 4px;
+        width: 100%;
+        scrollbar-width: none;
+    }
+
+    .filter-categories::-webkit-scrollbar {
+        display: none;
+    }
+
+    .filter-btn, .parts-filter-btn {
+        flex-shrink: 0;
+        padding: 7px 13px;
+        font-size: 0.78rem;
+        white-space: nowrap;
+        border-radius: var(--radius-full);
+    }
+
+    .search-sort-box {
+        max-width: 100%;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .search-input-wrapper {
+        width: 100%;
+    }
+
+    .search-input-wrapper input {
+        width: 100%;
+        padding: 11px 12px 11px 36px;
+        font-size: 16px; /* Evita zoom automático no iPhone */
+        box-sizing: border-box;
+        border-radius: var(--radius-sm);
+    }
+
+    .sort-select {
+        width: 100%;
+        padding: 11px 12px;
+        font-size: 16px;
+        box-sizing: border-box;
+        border-radius: var(--radius-sm);
+    }
+
+    .inventory-status-bar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+        font-size: 0.78rem;
+        margin-bottom: 18px;
+    }
+
+    /* GRID DE VEÍCULOS MOBILE */
+    .vehicles-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+        width: 100%;
+    }
+
+    .car-card {
+        width: 100%;
+        border-radius: var(--radius-md);
+        margin: 0;
+    }
+
+    .car-media {
+        height: 190px;
+        width: 100%;
+    }
+
+    .car-content {
+        padding: 16px 14px;
+    }
+
+    .car-brand {
+        font-size: 0.72rem;
+    }
+
+    .car-title {
+        font-size: 1.1rem;
+        margin: 2px 0 10px 0;
+    }
+
+    .car-specs-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+        font-size: 0.78rem;
+        padding: 8px 0;
+        margin-bottom: 12px;
+    }
+
+    .fipe-comparison {
+        padding: 10px 12px;
+        margin-bottom: 14px;
+    }
+
+    .main-price {
+        font-size: 1.3rem;
+    }
+
+    .car-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+        width: 100%;
+    }
+
+    .car-actions .btn {
+        padding: 10px 6px;
+        font-size: 0.78rem;
+        min-height: 42px;
+    }
+
+    /* GALERIA PÁTIO REAL MOBILE */
+    .patio-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        width: 100%;
+    }
+
+    .patio-card-1, .patio-card-2, .patio-card-3, .patio-card-4 {
+        width: 100%;
+        height: 200px;
+        border-radius: var(--radius-md);
+    }
+
+    .patio-card-overlay {
+        padding: 14px;
+    }
+
+    .patio-card-overlay h4 {
+        font-size: 1rem;
+        margin-bottom: 4px;
+    }
+
+    .patio-card-overlay p {
+        font-size: 0.75rem;
+    }
+
+    /* CATÁLOGO DE AUTOPEÇAS MOBILE */
+    .parts-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        width: 100%;
+    }
+
+    .part-card {
+        width: 100%;
+        border-radius: var(--radius-md);
+    }
+
+    .part-media {
+        height: 150px;
+        width: 100%;
+    }
+
+    .part-body {
+        padding: 14px;
+    }
+
+    .part-title {
+        font-size: 1rem;
+        margin-bottom: 6px;
+    }
+
+    .part-compatibility, .part-warranty {
+        font-size: 0.78rem;
+    }
+
+    .part-price {
+        font-size: 1.25rem;
+    }
+
+    .custom-parts-cta-card {
+        padding: 20px 14px;
+        width: 100%;
+        border-radius: var(--radius-md);
+    }
+
+    /* SIMULADOR DE FINANCIAMENTO MOBILE */
+    .simulator-card-wrapper {
+        width: 100%;
+        margin-bottom: 30px;
+        border-radius: var(--radius-md);
+    }
+
+    .simulator-grid {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .simulator-controls {
+        padding: 18px 12px;
+        width: 100%;
+    }
+
+    .sim-group {
+        margin-bottom: 18px;
+        width: 100%;
+    }
+
+    .sim-group-header {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+        margin-bottom: 8px;
+    }
+
+    .sim-input-box {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 12px;
+        box-sizing: border-box;
+    }
+
+    .sim-input-box input {
+        font-size: 16px;
+        width: 130px;
+        text-align: right;
+    }
+
+    .custom-range-slider {
+        width: 100%;
+        height: 8px;
+    }
+
+    .custom-range-slider::-webkit-slider-thumb {
+        width: 26px;
+        height: 26px;
+    }
+
+    .months-selector {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 4px;
+        width: 100%;
+    }
+
+    .month-btn {
+        padding: 10px 0;
+        font-size: 0.8rem;
+        border-radius: var(--radius-sm);
+    }
+
+    .simulator-result-panel {
+        padding: 20px 12px;
+        width: 100%;
+        border-left: none;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .installment-display-box .installment-number {
+        font-size: 2.1rem;
+    }
+
+    .banks-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+        width: 100%;
+    }
+
+    .bank-card {
+        padding: 12px 8px;
+        border-radius: var(--radius-sm);
+    }
+
+    .bank-badge-icon {
+        font-size: 1.3rem;
+        margin-bottom: 4px;
+    }
+
+    .bank-card h4 {
+        font-size: 0.88rem;
+    }
+
+    .bank-tag {
+        font-size: 0.7rem;
+    }
+
+    /* SOBRE VAGNER MIYAHIRA MOBILE */
+    .founder-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 22px;
+        width: 100%;
+    }
+
+    .founder-frame {
+        border-radius: var(--radius-md);
+    }
+
+    .founder-frame img {
+        height: 290px;
+        width: 100%;
+        object-fit: cover;
+    }
+
+    .founder-badge-floating {
+        position: static;
+        margin-top: 10px;
+        width: 100%;
+        justify-content: center;
+        padding: 10px 14px;
+    }
+
+    .founder-content h2 {
+        font-size: 1.8rem;
+    }
+
+    .founder-title-role {
+        font-size: 0.85rem;
+        margin-bottom: 16px;
+    }
+
+    .founder-bio {
+        font-size: 0.9rem;
+        line-height: 1.6;
+        margin-bottom: 18px;
+    }
+
+    .founder-pillars {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        width: 100%;
+        margin-bottom: 24px;
+    }
+
+    /* FORMULÁRIO VENDA SEU CARRO MOBILE */
+    .sell-car-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+        width: 100%;
+    }
+
+    .sell-car-form-card {
+        padding: 18px 12px;
+        border-radius: var(--radius-md);
+        width: 100%;
+    }
+
+    .form-grid-2 {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        width: 100%;
+        margin-bottom: 10px;
+    }
+
+    .form-group {
+        margin-bottom: 10px;
+        width: 100%;
+    }
+
+    .form-group input, .form-group textarea, .form-group select {
+        font-size: 16px;
+        padding: 11px 12px;
+        border-radius: var(--radius-sm);
+        width: 100%;
+    }
+
+    .sell-benefit-list {
+        gap: 14px;
+        margin-top: 18px;
+    }
+
+    .benefit-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1.1rem;
+    }
+
+    /* DEPOIMENTOS & FAQ MOBILE */
+    .testimonials-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        width: 100%;
+    }
+
+    .testimonial-card {
+        padding: 16px 14px;
+        border-radius: var(--radius-md);
+    }
+
+    .testimonial-card .quote {
+        font-size: 0.88rem;
+        margin-bottom: 16px;
+    }
+
+    .faq-question {
+        padding: 14px 12px;
+        font-size: 0.92rem;
+    }
+
+    .faq-answer {
+        padding: 0 12px;
+    }
+
+    .faq-item.active .faq-answer {
+        padding: 0 12px 14px 12px;
+    }
+
+    .faq-answer p {
+        font-size: 0.85rem;
+    }
+
+    /* FOOTER MOBILE */
+    .main-footer {
+        padding: 45px 0 20px 0;
+        width: 100%;
+    }
+
+    .footer-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 22px;
+        width: 100%;
+        margin-bottom: 30px;
+    }
+
+    .logo-footer-img {
+        height: 36px;
+        max-width: 160px;
+    }
+
+    .footer-bottom {
+        flex-direction: column;
+        gap: 8px;
+        text-align: center;
+        font-size: 0.78rem;
+    }
+
+    /* MODAL DE VEÍCULOS (BOTTOM-SHEET TOUCH) */
+    .modal-backdrop {
+        padding: 0;
+        align-items: flex-end;
+        width: 100%;
+        height: 100%;
+    }
+
+    .modal-container {
+        width: 100%;
+        max-width: 100%;
+        max-height: 92vh;
+        border-radius: 18px 18px 0 0;
+        margin: 0;
+    }
+
+    .modal-vehicle-grid {
+        display: flex;
+        flex-direction: column;
+        padding: 16px 12px 36px 12px;
+        gap: 16px;
+        width: 100%;
+    }
+
+    .main-modal-img {
+        height: 190px;
+        width: 100%;
+    }
+
+    .thumb-list {
+        display: flex;
+        gap: 6px;
+        overflow-x: auto;
+        padding-bottom: 4px;
+        width: 100%;
+    }
+
+    .thumb {
+        width: 54px;
+        height: 38px;
+        flex-shrink: 0;
+    }
+
+    .price-big {
+        font-size: 1.65rem;
+    }
+
+    .modal-specs-table {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        font-size: 0.8rem;
+    }
+
+    .features-list {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        font-size: 0.8rem;
+    }
+
+    /* WIDGET FLUTUANTE DE WHATSAPP */
+    .whatsapp-floating-wrapper {
+        bottom: max(14px, env(safe-area-inset-bottom) + 6px);
+        right: 12px;
+        z-index: 1500;
+    }
+
+    .whatsapp-floating-btn {
+        width: 52px;
+        height: 52px;
+        font-size: 1.65rem;
+    }
+
+    .whatsapp-popup {
+        width: calc(100vw - 24px);
+        max-width: 320px;
+        right: 0;
+        bottom: 66px;
+        padding: 16px 12px;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   SMARTPHONES MUITO PEQUENOS (<= 400px)
+   -------------------------------------------------------------------------- */
+@media (max-width: 400px) {
+    .navbar {
+        height: 62px;
+        gap: 4px;
+    }
+
+    .logo-header-img {
+        height: 28px;
+        max-width: 110px;
+    }
+
+    .theme-toggle-btn {
+        width: 32px;
+        height: 32px;
+        min-width: 32px;
+    }
+
+    .header-whatsapp-btn {
+        width: 32px;
+        height: 32px;
+        min-width: 32px;
+        font-size: 0.95rem;
+    }
+
+    .mobile-menu-btn {
+        width: 34px;
+        height: 34px;
+        min-width: 34px;
+        font-size: 1rem;
+    }
+
+    .hero-title {
+        font-size: 1.55rem;
+    }
+
+    .hero-highlights {
+        grid-template-columns: 1fr;
+        gap: 6px;
+    }
+
+    .highlight-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 12px;
+    }
+
+    .banks-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .car-actions {
+        grid-template-columns: 1fr;
+    }
+
+    .months-selector {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
