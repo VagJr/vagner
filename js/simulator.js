@@ -110,13 +110,12 @@ class FinancingSimulator {
 
     renderBankOptions() {
         if (!this.bankSelect) return;
-        this.bankSelect.innerHTML = '<option value="Melhor Taxa Disponível">✨ Selecionar Melhor Taxa Automática</option>';
-        PARTNER_BANKS.forEach(bank => {
-            const opt = document.createElement('option');
-            opt.value = bank.name;
-            opt.textContent = `${bank.name} - ${bank.tag}`;
-            this.bankSelect.appendChild(opt);
-        });
+        this.bankSelect.innerHTML = `
+            <option value="Melhor Taxa Vigente de Mercado">✨ Taxa Média Estimada de Mercado (1,29% a.m.)</option>
+            <option value="Entrada Reduzida Flexível">⚡ Plano com Entrada Reduzida (20%)</option>
+            <option value="Condição Especial para Lojista/Repasse">🚗 Condição Especial Lojista / Repasse</option>
+            <option value="Análise de Score sem Entrada">📋 Análise Especial de Score (Sob Consulta)</option>
+        `;
     }
 
     setVehicleForSimulation(price, title = "") {
@@ -177,13 +176,14 @@ class FinancingSimulator {
 
     sendWhatsAppProposal() {
         const vehicleText = this.customVehicleTitle ? `🚗 *Veículo Selecionado:* ${this.customVehicleTitle}\n` : '';
-        const message = `Olá *Vagner Miyahira*, fiz uma simulação de financiamento pelo site oficial da *Trade Car - Vendas e Repasse*:\n\n` +
+        const message = `Olá! Gostaria de falar com um executivo de vendas da *Trade Car - Vendas e Repasse*.\n\n` +
+            `Fiz uma simulação estimada de financiamento pelo site oficial:\n\n` +
             vehicleText +
             `💰 *Valor do Veículo:* ${this.formatBRL(this.vehiclePrice)}\n` +
-            `💵 *Entrada Pretendida:* ${this.formatBRL(this.downPayment)}\n` +
-            `📊 *Plano Escolhido:* ${this.months}x de ${this.formatBRL(this.currentInstallment)}\n` +
-            `🏦 *Banco Preferencial:* ${this.selectedBank}\n\n` +
-            `Gostaria de verificar a aprovação do meu cadastro e documentos necessários!`;
+            `💵 *Entrada Estimada:* ${this.formatBRL(this.downPayment)}\n` +
+            `📊 *Plano Escolhido:* ${this.months}x de aproximadamente ${this.formatBRL(this.currentInstallment)}\n` +
+            `📋 *Perfil:* ${this.selectedBank}\n\n` +
+            `Gostaria de verificar as condições e fazer a análise de crédito com a equipe!`;
 
         const url = `https://wa.me/${COMPANY_CONFIG.whatsappNumber}?text=${encodeURIComponent(message)}`;
         window.open(url, '_blank');

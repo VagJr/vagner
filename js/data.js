@@ -8,12 +8,12 @@ const COMPANY_CONFIG = {
     name: "Trade Car - Vendas e Repasse",
     shortName: "Trade Car",
     slogan: "Vendas e Repasse",
-    owner: "Vagner Miyahira",
-    phone: "13 99782-7862",
-    whatsappNumber: "5513997827862",
+    director: "Vagner Miyahira",
+    phone: "13 99620-2124",
+    whatsappNumber: "5513996202124",
     email: "contato@tradecarrepasse.com.br",
-    location: "Baixada Santista, SP • Atendimento e Logística para Todo o Brasil",
-    hours: "Segunda a Sábado: 08:00 às 19:00 | Atendimento WhatsApp 24h",
+    location: "Baixada Santista, SP • Logística e Transporte a Consultar",
+    hours: "Segunda a Sábado: 08:00 às 19:00 | Atendimento WhatsApp com Executivos de Vendas",
     stats: {
         vehiclesSold: "+3.200",
         partnerDealers: "+150",
@@ -518,14 +518,14 @@ const TESTIMONIALS_DATA = [
         name: "Carlos Eduardo Mendes",
         role: "Proprietário de Revenda de Veículos (Lojista)",
         location: "Campinas / SP",
-        text: "Trabalho com a Trade Car e o Vagner Miyahira há mais de 4 anos comprando lotes de repasse para a minha loja. O cara é extremamente sério, o que ele fala no telefone é exatamente o que chega no caminhão cegonha. Margem excelente e documentação redonda.",
+        text: "Trabalho com a Trade Car há mais de 4 anos comprando lotes de repasse para a minha loja. Atendimento extremamente profissional pelo executivo de vendas, o que combinam na negociação é exatamente o que é entregue. Margem excelente e documentação redonda.",
         rating: 5
     },
     {
         name: "Marcos Vinícius Sampaio",
         role: "Comprador de Veículo Seminovo",
         location: "Santos / SP",
-        text: "Comprei um Renault Duster direto com o Vagner na Trade Car. Além de economizar mais de R$ 11.000 em relação à tabela FIPE, o financiamento foi aprovado pelo Santander no mesmo dia com uma parcela que coube com folga no meu bolso.",
+        text: "Comprei um Renault Duster na Trade Car com o executivo de vendas. Além de economizar mais de R$ 11.000 em relação à tabela FIPE, o financiamento foi conduzido pela equipe no mesmo dia com uma parcela que coube com folga no meu bolso.",
         rating: 5
     },
     {
@@ -544,7 +544,7 @@ const FAQS_DATA = [
     },
     {
         question: "Como funciona a entrega para outros estados e cidades?",
-        answer: "A Trade Car possui convênio com as maiores transportadoras e empresas de caminhão cegonha do Brasil, além de guinchos dedicados para entregas expressas. Enviamos o veículo com seguro total de transporte para qualquer cidade do território nacional."
+        answer: "A Trade Car assessora toda a logística de despacho através de transportadoras parceiras e carretas cegonha credenciadas. O frete e os prazos são cotados sob consulta de acordo com a sua cidade e estado, sempre com seguro total de transporte."
     },
     {
         question: "As peças automotivas possuem nota fiscal e garantia?",
@@ -552,10 +552,245 @@ const FAQS_DATA = [
     },
     {
         question: "Como funciona o financiamento bancário para os veículos?",
-        answer: "Operamos com os 6 maiores bancos do país (Santander, BV, Itaú, Bradesco, PAN e Safra). Você pode simular sua entrada e parcelas diretamente em nosso site e nos enviar a proposta pelo WhatsApp para aprovação em poucos minutos, mesmo sem comprovação complexa de renda."
+        answer: "Trabalhamos em parceria com as principais financeiras e bancos do mercado. Você pode realizar a simulação estimada diretamente em nosso site e nos enviar a proposta pelo WhatsApp para que nosso executivo de vendas realize a análise cadastral e busque a aprovação das melhores condições."
     },
     {
-        question: "Como posso vender ou repassar meu veículo para a Trade Car / Vagner Miyahira?",
-        answer: "Basta preencher o formulário 'Venda Seu Carro' em nosso site ou chamar diretamente no WhatsApp (13 99782-7862) com fotos, ano, modelo e valor pretendido. Avaliamos na hora e realizamos o pagamento à vista via PIX com transferência imediata."
+        question: "Como posso vender ou avaliar meu veículo com a Trade Car?",
+        answer: "Basta preencher o formulário 'Envie os Dados do Seu Veículo' em nosso site ou chamar diretamente no WhatsApp (13 99620-2124) com fotos, ano, modelo e valor pretendido. Nossa equipe técnica realiza a análise de mercado e histórico pericial sob consulta para formular a melhor proposta de repasse ou intermediação com segurança."
     }
 ];
+
+// ==========================================================================
+// TRADECAR STORAGE MANAGER (SINCRONIZAÇÃO EM TEMPO REAL)
+// ==========================================================================
+const DEFAULT_PRESET_TEMPLATES = [
+    {
+        id: "tpl-1",
+        title: "Apresentação & Boas-Vindas",
+        category: "Atendimento",
+        text: "Olá! Sou executivo de vendas da *Trade Car - Vendas e Repasse*. Seja muito bem-vindo! Como posso te ajudar hoje? Temos oportunidades exclusivas de repasse, seminovos e peças automotivas com procedência garantida."
+    },
+    {
+        id: "tpl-2",
+        title: "Envio de Ficha de Carro de Repasse",
+        category: "Vendas",
+        text: "Olá! Segue a oportunidade disponível em nosso estoque na Trade Car:\n\n🚗 *{veiculo}*\n📅 *Ano/Mod:* {ano}\n🛣️ *KM:* {km}\n💰 *Valor de Repasse:* {preco}\n📊 *Tabela FIPE:* {fipe} ({economia})\n🔍 *Laudo Cautelar:* 100% Aprovado\n\nPodemos agendar sua visita ao pátio ou formalizar a reserva do veículo agora?"
+    },
+    {
+        id: "tpl-3",
+        title: "Avaliação de Carro (Sob Consulta / Análise Técnica)",
+        category: "Compra/Repasse",
+        text: "Olá! Agradecemos o envio das informações do seu veículo para análise na *Trade Car*.\n\nNossa equipe técnica e de perícia já recebeu sua ficha e iniciou o estudo de viabilidade, histórico cautelar e mercado sob consulta.\n\nEsse procedimento leva de 24 a 48 horas úteis para estruturarmos uma negociação segura e justa. Retornaremos com o posicionamento assim que a checagem for concluída!"
+    },
+    {
+        id: "tpl-4",
+        title: "Simulação Estimada de Financiamento",
+        category: "Financiamento",
+        text: "Olá! Recebemos sua simulação aproximada de financiamento na Trade Car:\n\n💰 *Valor do Veículo:* {valor}\n💵 *Entrada Estimada:* {entrada}\n📊 *Plano:* {parcelas}\n\nPara que nosso executivo de vendas faça a análise oficial de crédito junto às financeiras parceiras, por gentileza me envie:\n1) Nome completo\n2) CPF\n3) Data de nascimento\n4) Possui CNH? (Sim/Não)"
+    },
+    {
+        id: "tpl-5",
+        title: "Consulta de Peça Automotiva",
+        category: "Peças",
+        text: "Olá! Recebemos sua solicitação de peça automotiva na *Trade Car Autopeças*.\n\n⚙️ *Item Solicitado:* {peca}\n\nNossas peças acompanham Nota Fiscal Eletrônica, garantia e baixa oficial no Detran. Estamos conferindo o estoque físico no galpão e já retornamos com fotos reais e a cotação do frete sob consulta para sua localidade."
+    },
+    {
+        id: "tpl-6",
+        title: "Condições de Atacado para Lojistas",
+        category: "Lojistas",
+        text: "Olá amigo lojista! Na *Trade Car* somos especialistas em repasse com margem real para revenda e giro acelerado.\n\nTodos os nossos veículos possuem laudo cautelar e documentação pronta para transferência imediata. Você tem interesse em adquirir lote fechado ou unidade avulsa?"
+    },
+    {
+        id: "tpl-7",
+        title: "Chave PIX para Sinal de Reserva",
+        category: "Financeiro",
+        text: "Perfeito! Para garantir a reserva imediata do veículo e suspender os anúncios públicos, solicitamos o envio do comprovante de sinal de reserva:\n\n🏦 *Chave PIX:* 13996202124 (Trade Car)\n\nAssim que o comprovante for enviado, nosso executivo de vendas emitirá o Termo Formal de Reserva do Veículo em seu nome."
+    },
+    {
+        id: "tpl-8",
+        title: "Agendamento de Vistoria Presencial",
+        category: "Pátio",
+        text: "Excelente! Você é nosso convidado para realizar uma vistoria detalhada no veículo em nosso pátio na Baixada Santista.\n\nTrabalhamos com horário pré-agendado para que um de nossos executivos de vendas dedique atenção exclusiva a você e o veículo esteja pronto para demonstração. Qual o melhor dia e horário para você?"
+    },
+    {
+        id: "tpl-9",
+        title: "Logística e Frete Sob Consulta",
+        category: "Logística",
+        text: "Olá! A respeito do envio do veículo para a sua cidade:\n\nA Trade Car assessora todo o transporte via caminhão cegonha e guinchos credenciados com seguro total de carga. O valor e o prazo de entrega são calculados sob consulta conforme sua localidade. Qual o seu CEP ou cidade/estado para cotarmos agora?"
+    }
+];
+
+class TradeCarStorageManager {
+    constructor() {
+        this.KEYS = {
+            VEHICLES: 'tradecar_vehicles_v2',
+            PARTS: 'tradecar_parts_v2',
+            LEADS: 'tradecar_leads_v2',
+            TEMPLATES: 'tradecar_templates_v2',
+            SETTINGS: 'tradecar_settings_v2',
+            AUTH: 'tradecar_admin_auth_v2'
+        };
+
+        this.init();
+    }
+
+    init() {
+        if (!localStorage.getItem(this.KEYS.VEHICLES)) {
+            localStorage.setItem(this.KEYS.VEHICLES, JSON.stringify(VEHICLES_DATA));
+        }
+        if (!localStorage.getItem(this.KEYS.PARTS)) {
+            localStorage.setItem(this.KEYS.PARTS, JSON.stringify(AUTO_PARTS_DATA));
+        }
+        if (!localStorage.getItem(this.KEYS.TEMPLATES)) {
+            localStorage.setItem(this.KEYS.TEMPLATES, JSON.stringify(DEFAULT_PRESET_TEMPLATES));
+        }
+        if (!localStorage.getItem(this.KEYS.LEADS)) {
+            localStorage.setItem(this.KEYS.LEADS, JSON.stringify([]));
+        }
+    }
+
+    broadcastUpdate(type = 'all') {
+        const event = new CustomEvent('tradecar_stock_updated', { detail: { type, timestamp: Date.now() } });
+        window.dispatchEvent(event);
+    }
+
+    getVehicles() {
+        try {
+            const raw = localStorage.getItem(this.KEYS.VEHICLES);
+            let list = [...VEHICLES_DATA];
+            if (raw) {
+                const parsed = JSON.parse(raw);
+                if (Array.isArray(parsed) && parsed.length > 0) list = parsed;
+            }
+            return list.map(v => ({
+                ...v,
+                images: (v.images && Array.isArray(v.images) && v.images.length > 0)
+                    ? v.images
+                    : [v.image, v.secondaryImage, 'images/1.png', 'images/2.png'].filter(Boolean)
+            }));
+        } catch (e) {
+            console.error("Erro ao carregar veículos:", e);
+            return [...VEHICLES_DATA];
+        }
+    }
+
+    saveVehicles(list) {
+        localStorage.setItem(this.KEYS.VEHICLES, JSON.stringify(list));
+        this.broadcastUpdate('vehicles');
+    }
+
+    getParts() {
+        try {
+            const raw = localStorage.getItem(this.KEYS.PARTS);
+            if (!raw) return [...AUTO_PARTS_DATA];
+            const parsed = JSON.parse(raw);
+            return Array.isArray(parsed) && parsed.length > 0 ? parsed : [...AUTO_PARTS_DATA];
+        } catch (e) {
+            console.error("Erro ao carregar peças:", e);
+            return [...AUTO_PARTS_DATA];
+        }
+    }
+
+    saveParts(list) {
+        localStorage.setItem(this.KEYS.PARTS, JSON.stringify(list));
+        this.broadcastUpdate('parts');
+    }
+
+    getTemplates() {
+        try {
+            const raw = localStorage.getItem(this.KEYS.TEMPLATES);
+            if (!raw) return [...DEFAULT_PRESET_TEMPLATES];
+            const parsed = JSON.parse(raw);
+            return Array.isArray(parsed) ? parsed : [...DEFAULT_PRESET_TEMPLATES];
+        } catch (e) {
+            return [...DEFAULT_PRESET_TEMPLATES];
+        }
+    }
+
+    saveTemplates(list) {
+        localStorage.setItem(this.KEYS.TEMPLATES, JSON.stringify(list));
+    }
+
+    getLeads() {
+        try {
+            const raw = localStorage.getItem(this.KEYS.LEADS);
+            return raw ? JSON.parse(raw) : [];
+        } catch (e) {
+            return [];
+        }
+    }
+
+    saveLead(leadData) {
+        const leads = this.getLeads();
+        const newLead = {
+            id: 'lead-' + Date.now(),
+            date: new Date().toLocaleString('pt-BR'),
+            status: 'Novo',
+            ...leadData
+        };
+        leads.unshift(newLead);
+        localStorage.setItem(this.KEYS.LEADS, JSON.stringify(leads));
+        this.broadcastUpdate('leads');
+        return newLead;
+    }
+
+    updateLeadStatus(leadId, status) {
+        const leads = this.getLeads();
+        const index = leads.findIndex(l => l.id === leadId);
+        if (index !== -1) {
+            leads[index].status = status;
+            localStorage.setItem(this.KEYS.LEADS, JSON.stringify(leads));
+            this.broadcastUpdate('leads');
+        }
+    }
+
+    deleteLead(leadId) {
+        const leads = this.getLeads().filter(l => l.id !== leadId);
+        localStorage.setItem(this.KEYS.LEADS, JSON.stringify(leads));
+        this.broadcastUpdate('leads');
+    }
+
+    resetToDefaults() {
+        localStorage.setItem(this.KEYS.VEHICLES, JSON.stringify(VEHICLES_DATA));
+        localStorage.setItem(this.KEYS.PARTS, JSON.stringify(AUTO_PARTS_DATA));
+        localStorage.setItem(this.KEYS.TEMPLATES, JSON.stringify(DEFAULT_PRESET_TEMPLATES));
+        this.broadcastUpdate('all');
+    }
+
+    exportBackup() {
+        return JSON.stringify({
+            version: '2.0',
+            exportDate: new Date().toISOString(),
+            vehicles: this.getVehicles(),
+            parts: this.getParts(),
+            templates: this.getTemplates(),
+            leads: this.getLeads()
+        }, null, 2);
+    }
+
+    importBackup(jsonString) {
+        try {
+            const data = JSON.parse(jsonString);
+            if (data.vehicles && Array.isArray(data.vehicles)) {
+                this.saveVehicles(data.vehicles);
+            }
+            if (data.parts && Array.isArray(data.parts)) {
+                this.saveParts(data.parts);
+            }
+            if (data.templates && Array.isArray(data.templates)) {
+                this.saveTemplates(data.templates);
+            }
+            if (data.leads && Array.isArray(data.leads)) {
+                localStorage.setItem(this.KEYS.LEADS, JSON.stringify(data.leads));
+            }
+            this.broadcastUpdate('all');
+            return true;
+        } catch (e) {
+            console.error("Erro ao importar backup:", e);
+            return false;
+        }
+    }
+}
+
+// Global Storage instance
+const TradeCarStorage = new TradeCarStorageManager();

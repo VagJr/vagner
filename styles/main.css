@@ -1900,11 +1900,25 @@ h1, h2, h3, h4, h5, h6 {
     display: flex;
     gap: 10px;
     margin-bottom: 20px;
+    overflow-x: auto;
+    padding-bottom: 6px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--brand-orange) rgba(255, 255, 255, 0.05);
+}
+
+.thumb-list::-webkit-scrollbar {
+    height: 5px;
+}
+
+.thumb-list::-webkit-scrollbar-thumb {
+    background: var(--brand-orange);
+    border-radius: 4px;
 }
 
 .thumb {
-    width: 70px;
-    height: 50px;
+    flex-shrink: 0;
+    width: 72px;
+    height: 52px;
     border-radius: var(--radius-sm);
     object-fit: cover;
     cursor: pointer;
@@ -1916,6 +1930,29 @@ h1, h2, h3, h4, h5, h6 {
 .thumb.active, .thumb:hover {
     border-color: var(--brand-orange);
     opacity: 1;
+    transform: translateY(-1px);
+}
+
+.photo-count-badge {
+    position: absolute;
+    bottom: 14px;
+    left: 14px;
+    background: rgba(11, 15, 25, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #fff;
+    padding: 3px 8px;
+    border-radius: var(--radius-sm);
+    font-size: 0.72rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    backdrop-filter: blur(6px);
+    z-index: 2;
+}
+
+.photo-count-badge i {
+    color: var(--brand-orange);
 }
 
 .laudo-box {
@@ -2141,3 +2178,91 @@ h1, h2, h3, h4, h5, h6 {
     color: var(--brand-orange-light);
     font-size: 1.1rem;
 }
+
+/* ==========================================================================
+   TOP BAR ADMIN BUTTON & NEW COMPONENTS
+   ========================================================================== */
+.top-bar-admin-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px;
+    background: rgba(249, 115, 22, 0.15);
+    border: 1px solid rgba(249, 115, 22, 0.4);
+    border-radius: var(--radius-sm);
+    color: #ffaa55 !important;
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: var(--transition);
+}
+
+.top-bar-admin-btn:hover {
+    background: var(--brand-orange);
+    color: #ffffff !important;
+    border-color: var(--brand-orange);
+    box-shadow: 0 0 12px rgba(249, 115, 22, 0.4);
+}
+
+/* AVISO DE CATÁLOGO EM DESENVOLVIMENTO (AUTOPEÇAS) */
+.parts-dev-notice-box {
+    background: linear-gradient(135deg, rgba(249, 115, 22, 0.08) 0%, rgba(20, 20, 25, 0.95) 100%);
+    border: 1px solid rgba(249, 115, 22, 0.3);
+    border-radius: var(--radius-lg);
+    padding: 20px 24px;
+    margin-bottom: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.parts-dev-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--brand-orange-light);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.parts-dev-notice-box p {
+    font-size: 0.92rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin: 0;
+}
+
+.pulse-dot-orange {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--brand-orange);
+    box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.7);
+    animation: pulseOrange 1.8s infinite;
+}
+
+@keyframes pulseOrange {
+    0% {
+        box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 8px rgba(249, 115, 22, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(249, 115, 22, 0);
+    }
+}
+
+/* CAR STATUS STYLING */
+.car-card.car-sold {
+    opacity: 0.75;
+    filter: grayscale(20%);
+}
+
+.car-card.car-sold:hover {
+    transform: none;
+    border-color: var(--border-color);
+}
+

@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trade Car | Painel de Gestão & PDV Integrado</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="images/tradecar_logo.png">
+
+    <!-- FontAwesome 6 Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Stylesheet do Painel Administrativo -->
+    <link rel="stylesheet" href="styles/admin.css">
+</head>
+<body>
+
+    <!-- TELA DE LOGIN (PROTEÇÃO POR SENHA) -->
+    <div class="login-screen" id="login-screen">
+        <div class="login-card">
+            <div class="login-header">
+                <img src="images/tradecar_logo.png" alt="Trade Car Logo" class="login-logo">
+                <h2>Painel do Gestor & PDV</h2>
+                <p>Acesso restrito para administração de estoque e atendimento</p>
+            </div>
+
+            <form class="login-form" id="login-form">
+                <div class="form-group">
+                    <label for="adm-user">Usuário Administrador</label>
+                    <div class="login-input-wrap">
+                        <i class="fas fa-user"></i>
+                        <input type="text" id="adm-user" value="admin" required autocomplete="username">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="adm-pass">Senha de Acesso</label>
+                    <div class="login-input-wrap">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="adm-pass" placeholder="Digite sua senha" required autocomplete="current-password">
+                    </div>
+                </div>
+
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                    <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:0.8rem; color:var(--text-muted); margin:0;">
+                        <input type="checkbox" id="adm-remember" checked> Manter conectado
+                    </label>
+                    <span style="font-size:0.75rem; color:var(--brand-orange);">Trade Car Operacional</span>
+                </div>
+
+                <button type="submit" class="login-btn">
+                    <i class="fas fa-sign-in-alt"></i> Entrar na Plataforma
+                </button>
+
+                <div class="login-hints">
+                    Credencial padrão do sistema: <strong>admin</strong> / <strong>tradecar2026</strong>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- APLICAÇÃO PRINCIPAL (APP SHELL) -->
+    <div class="app-shell" id="app-shell" style="display: none;">
+        
+        <!-- SIDEBAR DE NAVEGAÇÃO -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <a href="#dashboard" class="sidebar-brand">
+                    <img src="images/tradecar_logo.png" alt="Trade Car Logo" class="sidebar-logo">
+                    <span class="sidebar-badge">PDV ADM</span>
+                </a>
+                <button class="mobile-menu-btn" id="sidebar-mobile-toggle" style="display:none;" aria-label="Fechar menu">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <nav class="sidebar-nav">
+                <span class="nav-section-label">Operação & Visão Geral</span>
+                <button class="nav-item-btn active" data-view="dashboard">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Visão Geral</span>
+                </button>
+
+                <span class="nav-section-label">Gestão de Catálogo</span>
+                <button class="nav-item-btn" data-view="vehicles">
+                    <i class="fas fa-car"></i>
+                    <span>Estoque de Carros</span>
+                    <span class="nav-badge-count" id="sidebar-badge-cars">0</span>
+                </button>
+                <button class="nav-item-btn" data-view="parts">
+                    <i class="fas fa-tools"></i>
+                    <span>Autopeças</span>
+                    <span class="nav-badge-count" id="sidebar-badge-parts">0</span>
+                </button>
+
+                <span class="nav-section-label">Ferramentas de Vendas</span>
+                <button class="nav-item-btn" data-view="whatsapp">
+                    <i class="fab fa-whatsapp"></i>
+                    <span>Central WhatsApp</span>
+                </button>
+                <button class="nav-item-btn" data-view="documents">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                    <span>Recibos & Propostas</span>
+                </button>
+                <button class="nav-item-btn" data-view="marketing">
+                    <i class="fas fa-bullhorn"></i>
+                    <span>Divulgação Rápida</span>
+                </button>
+
+                <span class="nav-section-label">CRM & Contatos</span>
+                <button class="nav-item-btn" data-view="leads">
+                    <i class="fas fa-inbox"></i>
+                    <span>Fichas & Avaliações</span>
+                    <span class="nav-badge-count" id="sidebar-badge-leads" style="background:rgba(249,115,22,0.2); color:var(--brand-orange);">0</span>
+                </button>
+
+                <span class="nav-section-label">Sistema</span>
+                <button class="nav-item-btn" data-view="settings">
+                    <i class="fas fa-cog"></i>
+                    <span>Configurações & Backup</span>
+                </button>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="user-snippet">
+                    <div class="user-avatar"><i class="fas fa-user-shield"></i></div>
+                    <div class="user-meta">
+                        <strong>Administrador</strong>
+                        <span>Trade Car Indie PDV</span>
+                    </div>
+                </div>
+                <button class="logout-btn" id="logout-btn" title="Sair do Sistema">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </div>
+        </aside>
+
+        <!-- WRAPPER DO CONTEÚDO PRINCIPAL -->
+        <main class="main-wrapper">
+            
+            <!-- TOP BAR FIXA -->
+            <header class="top-navbar">
+                <div class="top-nav-title">
+                    <h1 id="top-bar-view-title">
+                        <i class="fas fa-chart-line" style="color:var(--brand-orange)"></i> Visão Geral & Indicadores
+                    </h1>
+                </div>
+
+                <div class="top-nav-actions">
+                    <a href="index.html" target="_blank" class="btn-live-site" title="Abrir o site público em nova aba">
+                        <i class="fas fa-external-link-alt"></i> <span>Ver Site Ao Vivo</span>
+                    </a>
+                    <button class="btn-primary btn-sm" onclick="openNewVehicleModal()">
+                        <i class="fas fa-plus"></i> <span>Novo Carro</span>
+                    </button>
+                    <button class="btn-secondary btn-sm" onclick="openNewPartModal()">
+                        <i class="fas fa-plus"></i> <span>Nova Peça</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- CORPO DAS VISÕES -->
+            <div class="content-body">
+
+                <!-- 1. ABA: DASHBOARD -->
+                <section class="view-panel active" id="view-dashboard">
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <div class="metric-icon-box orange"><i class="fas fa-car-side"></i></div>
+                            <div class="metric-info">
+                                <span class="metric-label">Veículos Cadastrados</span>
+                                <div class="metric-value" id="metric-total-cars">0</div>
+                                <span class="metric-sub" id="metric-available-cars">Carregando...</span>
+                            </div>
+                        </div>
+
+                        <div class="metric-card">
+                            <div class="metric-icon-box blue"><i class="fas fa-cogs"></i></div>
+                            <div class="metric-info">
+                                <span class="metric-label">Peças no Galpão</span>
+                                <div class="metric-value" id="metric-total-parts">0</div>
+                                <span class="metric-sub">Catalogação ativa</span>
+                            </div>
+                        </div>
+
+                        <div class="metric-card">
+                            <div class="metric-icon-box green"><i class="fas fa-coins"></i></div>
+                            <div class="metric-info">
+                                <span class="metric-label">Capital em Estoque (Venda)</span>
+                                <div class="metric-value" id="metric-total-value">R$ 0,00</div>
+                                <span class="metric-sub">Preço total anunciado</span>
+                            </div>
+                        </div>
+
+                        <div class="metric-card">
+                            <div class="metric-icon-box purple"><i class="fas fa-comment-dots"></i></div>
+                            <div class="metric-info">
+                                <span class="metric-label">Fichas / Leads Novos</span>
+                                <div class="metric-value" id="metric-pending-leads">0</div>
+                                <span class="metric-sub">Aguardando contato</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ATALHOS RÁPIDOS DO OPERADOR INDIE -->
+                    <div style="background:var(--adm-surface); border:1px solid var(--adm-border); border-radius:var(--radius-lg); padding:20px; margin-bottom:28px;">
+                        <h3 style="font-size:1.05rem; margin-bottom:14px; color:#fff; display:flex; align-items:center; gap:8px;">
+                            <i class="fas fa-bolt" style="color:var(--brand-orange)"></i> Ações Rápidas de Operação
+                        </h3>
+                        <div style="display:flex; flex-wrap:wrap; gap:12px;">
+                            <button class="btn-primary" onclick="openNewVehicleModal()">
+                                <i class="fas fa-plus-circle"></i> Cadastrar Veículo no Estoque
+                            </button>
+                            <button class="btn-secondary" onclick="openNewPartModal()">
+                                <i class="fas fa-tools"></i> Adicionar Peça Automotiva
+                            </button>
+                            <button class="btn-secondary" onclick="document.querySelector('.nav-item-btn[data-view=\'whatsapp\']').click()">
+                                <i class="fab fa-whatsapp" style="color:var(--brand-green);"></i> Abrir Respostas Pré-Setadas
+                            </button>
+                            <button class="btn-secondary" onclick="document.querySelector('.nav-item-btn[data-view=\'documents\']').click()">
+                                <i class="fas fa-print"></i> Gerar Recibo de Sinal
+                            </button>
+                            <button class="btn-secondary" onclick="document.querySelector('.nav-item-btn[data-view=\'marketing\']').click()">
+                                <i class="fas fa-share-alt"></i> Gerador de Anúncios
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- TABELA RESUMIDA DO ESTOQUE -->
+                    <div class="table-card">
+                        <div style="padding:18px 20px; border-bottom:1px solid var(--adm-border); display:flex; justify-content:space-between; align-items:center;">
+                            <h3 style="font-size:1rem; font-weight:700; color:#fff;">Veículos Recentes no Pátio</h3>
+                            <button class="btn-secondary btn-sm" onclick="document.querySelector('.nav-item-btn[data-view=\'vehicles\']').click()">
+                                Ver Estoque Completo <i class="fas fa-arrow-right"></i>
+                            </button>
+                        </div>
+                        <div class="adm-table-wrap">
+                            <table class="adm-table">
+                                <thead>
+                                    <tr>
+                                        <th>Veículo</th>
+                                        <th>Categoria</th>
+                                        <th>Preço Venda</th>
+                                        <th>Status</th>
+                                        <th>Ação</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dashboard-recent-cars">
+                                    <!-- Preenchido via admin.js -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 2. ABA: ESTOQUE DE VEÍCULOS (PDV COMPLETO) -->
+                <section class="view-panel" id="view-vehicles">
+                    <div class="action-toolbar">
+                        <div class="toolbar-search-wrap">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="adm-vehicle-search" placeholder="Buscar por marca, modelo ou placa...">
+                        </div>
+
+                        <div class="toolbar-filters">
+                            <select id="adm-vehicle-cat-filter" class="adm-select">
+                                <option value="all">Todas as Categorias</option>
+                                <option value="repasse">Repasse Lojista</option>
+                                <option value="seminovos">Seminovos Selecionados</option>
+                                <option value="oportunidade">Oportunidade Única</option>
+                            </select>
+
+                            <select id="adm-vehicle-status-filter" class="adm-select">
+                                <option value="all">Todos os Status</option>
+                                <option value="available">Disponíveis</option>
+                                <option value="reserved">Reservados</option>
+                                <option value="sold">Vendidos</option>
+                            </select>
+
+                            <button class="btn-primary" id="btn-new-vehicle">
+                                <i class="fas fa-plus"></i> + Novo Veículo
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="table-card">
+                        <div class="adm-table-wrap">
+                            <table class="adm-table">
+                                <thead>
+                                    <tr>
+                                        <th>Veículo & Detalhes</th>
+                                        <th>Categoria</th>
+                                        <th>Preço / FIPE</th>
+                                        <th>Margem Economia</th>
+                                        <th>Status no Site</th>
+                                        <th>Ações Rápidas</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="adm-vehicles-tbody">
+                                    <!-- Preenchido via admin.js -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 3. ABA: DEPARTAMENTO DE AUTOPEÇAS -->
+                <section class="view-panel" id="view-parts">
+                    <div class="action-toolbar">
+                        <div class="toolbar-search-wrap">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="adm-parts-search" placeholder="Buscar por peça, código OEM ou compatibilidade...">
+                        </div>
+
+                        <div class="toolbar-filters">
+                            <select id="adm-parts-cat-filter" class="adm-select">
+                                <option value="all">Todas as Categorias</option>
+                                <option value="motores">Motores & Câmbios</option>
+                                <option value="iluminacao">Faróis & Lanternas</option>
+                                <option value="lataria">Lataria & Funilaria</option>
+                                <option value="eletronica">Módulos & Eletrônica</option>
+                                <option value="rodas">Rodas & Suspensão</option>
+                            </select>
+
+                            <button class="btn-primary" id="btn-new-part">
+                                <i class="fas fa-plus"></i> + Nova Peça
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="table-card">
+                        <div class="adm-table-wrap">
+                            <table class="adm-table">
+                                <thead>
+                                    <tr>
+                                        <th>Peça & Código OEM</th>
+                                        <th>Compatibilidade</th>
+                                        <th>Preço à Vista</th>
+                                        <th>Estoque Físico</th>
+                                        <th>Procedência</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="adm-parts-tbody">
+                                    <!-- Preenchido via admin.js -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 4. ABA: CENTRAL WHATSAPP (RESPOSTAS PRÉ-SETADAS) -->
+                <section class="view-panel" id="view-whatsapp">
+                    <div class="action-toolbar" style="margin-bottom:18px;">
+                        <div class="toolbar-search-wrap" style="max-width:400px;">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="adm-tpl-search" placeholder="Buscar nos scripts pré-setados...">
+                        </div>
+                        <button class="btn-success btn-sm" id="btn-new-template">
+                            <i class="fas fa-plus"></i> + Novo Script Personalizado
+                        </button>
+                    </div>
+
+                    <div class="whatsapp-suite-grid">
+                        <aside class="template-categories-card">
+                            <h4 style="font-size:0.85rem; text-transform:uppercase; color:var(--text-dim); margin-bottom:12px; letter-spacing:0.5px;">Categorias de Atendimento</h4>
+                            <button class="tpl-cat-btn active" data-cat="all"><span>Todos os Scripts</span> <i class="fas fa-chevron-right"></i></button>
+                            <button class="tpl-cat-btn" data-cat="Atendimento"><span>Boas-Vindas</span> <i class="fas fa-chevron-right"></i></button>
+                            <button class="tpl-cat-btn" data-cat="Vendas"><span>Ficha de Carro</span> <i class="fas fa-chevron-right"></i></button>
+                            <button class="tpl-cat-btn" data-cat="Compra/Repasse"><span>Avaliação Cautelar</span> <i class="fas fa-chevron-right"></i></button>
+                            <button class="tpl-cat-btn" data-cat="Financiamento"><span>Simulação de Crédito</span> <i class="fas fa-chevron-right"></i></button>
+                            <button class="tpl-cat-btn" data-cat="Peças"><span>Autopeças</span> <i class="fas fa-chevron-right"></i></button>
+                            <button class="tpl-cat-btn" data-cat="Lojistas"><span>Atacado Lojistas</span> <i class="fas fa-chevron-right"></i></button>
+                            <button class="tpl-cat-btn" data-cat="Financeiro"><span>Chave PIX / Sinal</span> <i class="fas fa-chevron-right"></i></button>
+                            <button class="tpl-cat-btn" data-cat="Pátio"><span>Agendamento Pátio</span> <i class="fas fa-chevron-right"></i></button>
+                            <button class="tpl-cat-btn" data-cat="Logística"><span>Frete Sob Consulta</span> <i class="fas fa-chevron-right"></i></button>
+                        </aside>
+
+                        <div class="templates-list-col" id="whatsapp-templates-list">
+                            <!-- Preenchido dinamicamente via admin.js -->
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 5. ABA: RECIBOS & PROPOSTAS (PDV IMPRESSÃO) -->
+                <section class="view-panel" id="view-documents">
+                    <div class="doc-generator-grid">
+                        <div class="doc-form-card">
+                            <h3 style="font-size:1.1rem; color:#fff; margin-bottom:16px;">
+                                <i class="fas fa-file-contract" style="color:var(--brand-orange)"></i> Emissão de Proposta / Recibo
+                            </h3>
+                            
+                            <div class="adm-form-group">
+                                <label for="doc-car-select">Veículo do Negócio:</label>
+                                <select id="doc-car-select" class="adm-select" style="width:100%;">
+                                    <!-- Preenchido via admin.js -->
+                                </select>
+                            </div>
+
+                            <div class="adm-form-group">
+                                <label for="doc-buyer-name">Nome do Comprador / Razão Social:</label>
+                                <input type="text" id="doc-buyer-name" placeholder="Ex: Marcelo Oliveira">
+                            </div>
+
+                            <div class="form-grid-2">
+                                <div class="adm-form-group">
+                                    <label for="doc-buyer-doc">CPF ou CNPJ:</label>
+                                    <input type="text" id="doc-buyer-doc" placeholder="000.000.000-00">
+                                </div>
+                                <div class="adm-form-group">
+                                    <label for="doc-buyer-phone">WhatsApp / Telefone:</label>
+                                    <input type="text" id="doc-buyer-phone" placeholder="(13) 99999-9999">
+                                </div>
+                            </div>
+
+                            <div class="adm-form-group">
+                                <label for="doc-buyer-city">Cidade / Estado:</label>
+                                <input type="text" id="doc-buyer-city" value="Santos / SP">
+                            </div>
+
+                            <div class="form-grid-2">
+                                <div class="adm-form-group">
+                                    <label for="doc-deal-price">Valor Total Acordado (R$):</label>
+                                    <input type="number" id="doc-deal-price" placeholder="79900">
+                                </div>
+                                <div class="adm-form-group">
+                                    <label for="doc-deposit-amount">Sinal / Reserva (R$):</label>
+                                    <input type="number" id="doc-deposit-amount" placeholder="5000">
+                                </div>
+                            </div>
+
+                            <div class="adm-form-group">
+                                <label for="doc-payment-method">Forma do Sinal:</label>
+                                <select id="doc-payment-method" class="adm-select" style="width:100%;">
+                                    <option value="PIX Instantâneo">PIX Instantâneo</option>
+                                    <option value="Transferência Bancária TED">Transferência TED</option>
+                                    <option value="Cartão de Crédito">Cartão de Crédito</option>
+                                    <option value="Dinheiro em Espécie">Dinheiro em Espécie</option>
+                                </select>
+                            </div>
+
+                            <div class="adm-form-group">
+                                <label for="doc-terms">Termos e Condições do Negócio:</label>
+                                <textarea id="doc-terms" rows="3">Veículo comercializado no estado de conservação comprovado em vistoria prévia. Documentação e laudo cautelar liberados para transferência. O saldo devedor deverá ser quitado no ato da retirada ou embarque.</textarea>
+                            </div>
+
+                            <button type="button" class="btn-primary" id="btn-print-doc" style="width:100%;">
+                                <i class="fas fa-print"></i> Imprimir / Salvar em PDF
+                            </button>
+                        </div>
+
+                        <!-- PREVIEW DO DOCUMENTO TIMBRADO -->
+                        <div class="doc-preview-card" id="doc-live-preview">
+                            <!-- Preenchido em tempo real pelo admin.js -->
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 6. ABA: DIVULGAÇÃO & MARKETING -->
+                <section class="view-panel" id="view-marketing">
+                    <div style="background:var(--adm-surface); border:1px solid var(--adm-border); border-radius:var(--radius-lg); padding:24px; margin-bottom:24px;">
+                        <h3 style="font-size:1.15rem; color:#fff; margin-bottom:14px;">
+                            <i class="fas fa-bullhorn" style="color:var(--brand-orange)"></i> Gerador de Anúncios e Divulgação Rápida
+                        </h3>
+                        <p style="font-size:0.88rem; color:var(--text-muted); margin-bottom:18px;">
+                            Selecione qualquer veículo do estoque para gerar textos prontos para grupos de repasse no WhatsApp, Instagram e portais de classificados.
+                        </p>
+                        
+                        <div style="max-width:460px;">
+                            <label style="display:block; font-size:0.82rem; color:var(--text-muted); margin-bottom:6px; font-weight:600;">Selecione o Veículo:</label>
+                            <select id="mkt-car-select" class="adm-select" style="width:100%;">
+                                <!-- Preenchido via admin.js -->
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:20px;">
+                        <!-- WHATSAPP GRUPOS -->
+                        <div style="background:var(--adm-surface); border:1px solid var(--adm-border); border-radius:var(--radius-lg); padding:20px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                                <h4 style="font-size:0.95rem; color:#fff;"><i class="fab fa-whatsapp" style="color:var(--brand-green);"></i> Grupos de Lojistas de Repasse</h4>
+                                <button class="btn-secondary btn-sm" onclick="copyMarketingBox('copy-output-whatsapp')"><i class="fas fa-copy"></i> Copiar</button>
+                            </div>
+                            <textarea id="copy-output-whatsapp" rows="12" class="adm-select" style="width:100%; font-family:monospace; font-size:0.82rem; line-height:1.5; resize:none; padding:12px;" readonly></textarea>
+                        </div>
+
+                        <!-- INSTAGRAM & FACEBOOK -->
+                        <div style="background:var(--adm-surface); border:1px solid var(--adm-border); border-radius:var(--radius-lg); padding:20px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                                <h4 style="font-size:0.95rem; color:#fff;"><i class="fab fa-instagram" style="color:#e1306c;"></i> Instagram & Facebook</h4>
+                                <button class="btn-secondary btn-sm" onclick="copyMarketingBox('copy-output-social')"><i class="fas fa-copy"></i> Copiar</button>
+                            </div>
+                            <textarea id="copy-output-social" rows="12" class="adm-select" style="width:100%; font-family:monospace; font-size:0.82rem; line-height:1.5; resize:none; padding:12px;" readonly></textarea>
+                        </div>
+
+                        <!-- PORTAIS / MARKETPLACE -->
+                        <div style="background:var(--adm-surface); border:1px solid var(--adm-border); border-radius:var(--radius-lg); padding:20px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                                <h4 style="font-size:0.95rem; color:#fff;"><i class="fas fa-globe" style="color:var(--brand-blue);"></i> Portais & OLX / Marketplace</h4>
+                                <button class="btn-secondary btn-sm" onclick="copyMarketingBox('copy-output-portals')"><i class="fas fa-copy"></i> Copiar</button>
+                            </div>
+                            <textarea id="copy-output-portals" rows="12" class="adm-select" style="width:100%; font-family:monospace; font-size:0.82rem; line-height:1.5; resize:none; padding:12px;" readonly></textarea>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 7. ABA: LEADS & AVALIAÇÕES RECEBIDAS -->
+                <section class="view-panel" id="view-leads">
+                    <div class="action-toolbar">
+                        <h3 style="font-size:1.1rem; color:#fff;">Fichas e Avaliações de Veículos Enviadas pelo Site</h3>
+                        <span style="font-size:0.82rem; color:var(--text-muted);">Atualização em tempo real conforme clientes preenchem o site</span>
+                    </div>
+
+                    <div class="table-card">
+                        <div class="adm-table-wrap">
+                            <table class="adm-table">
+                                <thead>
+                                    <tr>
+                                        <th>Data / Hora</th>
+                                        <th>Cliente & Contato</th>
+                                        <th>Veículo Ofertado</th>
+                                        <th>Valor Pretendido</th>
+                                        <th>Observações</th>
+                                        <th>Status do Lead</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="adm-leads-tbody">
+                                    <!-- Preenchido via admin.js -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 8. ABA: CONFIGURAÇÕES & BACKUP -->
+                <section class="view-panel" id="view-settings">
+                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:24px;">
+                        
+                        <!-- BACKUP & RESTAURAÇÃO -->
+                        <div style="background:var(--adm-surface); border:1px solid var(--adm-border); border-radius:var(--radius-lg); padding:24px;">
+                            <h3 style="font-size:1.1rem; color:#fff; margin-bottom:14px;">
+                                <i class="fas fa-database" style="color:var(--brand-orange)"></i> Backup do Banco de Dados
+                            </h3>
+                            <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:20px; line-height:1.5;">
+                                Exporte com 1 clique todo o inventário de veículos, peças, scripts e histórico de leads em formato JSON para segurança total.
+                            </p>
+                            
+                            <div style="display:flex; flex-direction:column; gap:12px;">
+                                <button class="btn-primary" id="btn-export-backup">
+                                    <i class="fas fa-download"></i> Exportar Backup Completo (JSON)
+                                </button>
+                                
+                                <input type="file" id="file-import-backup" accept=".json" style="display:none;">
+                                <button class="btn-secondary" id="btn-import-backup">
+                                    <i class="fas fa-upload"></i> Restaurar Backup a partir de Arquivo
+                                </button>
+
+                                <hr style="border:none; border-top:1px solid var(--adm-border); margin:10px 0;">
+
+                                <button class="btn-secondary" id="btn-reset-defaults" style="color:var(--brand-red); border-color:rgba(239,68,68,0.3);">
+                                    <i class="fas fa-undo"></i> Restaurar Dados Originais de Fábrica
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- ALTERAR SENHA -->
+                        <div style="background:var(--adm-surface); border:1px solid var(--adm-border); border-radius:var(--radius-lg); padding:24px;">
+                            <h3 style="font-size:1.1rem; color:#fff; margin-bottom:14px;">
+                                <i class="fas fa-key" style="color:var(--brand-green)"></i> Segurança & Senha de Acesso
+                            </h3>
+                            <form id="form-change-password">
+                                <div class="adm-form-group">
+                                    <label for="new-admin-pass">Nova Senha do Administrador:</label>
+                                    <input type="password" id="new-admin-pass" placeholder="Digite uma nova senha segura" required>
+                                </div>
+                                <button type="submit" class="btn-success">
+                                    <i class="fas fa-save"></i> Salvar Nova Senha
+                                </button>
+                            </form>
+
+                            <div style="margin-top:24px; padding:14px; background:var(--adm-surface-2); border-radius:var(--radius-sm); font-size:0.8rem; color:var(--text-dim);">
+                                <strong>Contato Oficial Vinculado:</strong><br>
+                                WhatsApp: (13) 99620-2124<br>
+                                Direção Executiva: Vagner Miyahira<br>
+                                Atendimento: Executivos de Vendas
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- MODAL: CADASTRO / EDIÇÃO DE VEÍCULO -->
+    <div class="adm-modal-backdrop" id="adm-vehicle-modal">
+        <div class="adm-modal">
+            <div class="adm-modal-header">
+                <h3 id="vehicle-modal-title">Cadastrar Novo Veículo no Estoque</h3>
+                <button class="modal-close-icon" onclick="closeVehicleModal()"><i class="fas fa-times"></i></button>
+            </div>
+
+            <form id="vehicle-form">
+                <div class="adm-form-group">
+                    <label for="form-car-title">Título Comercial do Veículo *</label>
+                    <input type="text" id="form-car-title" placeholder="Ex: Renault Duster Iconic 1.6 CVT" required>
+                </div>
+
+                <div class="form-grid-2">
+                    <div class="adm-form-group">
+                        <label for="form-car-brand">Marca *</label>
+                        <input type="text" id="form-car-brand" placeholder="Ex: Renault" required>
+                    </div>
+                    <div class="adm-form-group">
+                        <label for="form-car-model">Modelo *</label>
+                        <input type="text" id="form-car-model" placeholder="Ex: Duster" required>
+                    </div>
+                </div>
+
+                <div class="form-grid-2">
+                    <div class="adm-form-group">
+                        <label for="form-car-year">Ano Fabricação / Modelo *</label>
+                        <input type="text" id="form-car-year" placeholder="Ex: 2022/2023" required>
+                    </div>
+                    <div class="adm-form-group">
+                        <label for="form-car-km">Quilometragem (KM) *</label>
+                        <input type="text" id="form-car-km" placeholder="Ex: 42.000 km" required>
+                    </div>
+                </div>
+
+                <div class="form-grid-2">
+                    <div class="adm-form-group">
+                        <label for="form-car-transmission">Câmbio</label>
+                        <select id="form-car-transmission">
+                            <option value="Automático CVT">Automático CVT</option>
+                            <option value="Automático">Automático Convencional</option>
+                            <option value="Manual">Manual</option>
+                            <option value="Automatizado">Automatizado</option>
+                        </select>
+                    </div>
+                    <div class="adm-form-group">
+                        <label for="form-car-fuel">Combustível</label>
+                        <select id="form-car-fuel">
+                            <option value="Flex">Flex (Álcool/Gasolina)</option>
+                            <option value="Gasolina">Gasolina</option>
+                            <option value="Diesel">Diesel</option>
+                            <option value="Híbrido">Híbrido</option>
+                            <option value="Elétrico">Elétrico</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-grid-2">
+                    <div class="adm-form-group">
+                        <label for="form-car-color">Cor</label>
+                        <input type="text" id="form-car-color" placeholder="Ex: Preto Nacré">
+                    </div>
+                    <div class="adm-form-group">
+                        <label for="form-car-plate">Final da Placa</label>
+                        <input type="text" id="form-car-plate" placeholder="Ex: 6">
+                    </div>
+                </div>
+
+                <div class="form-grid-2">
+                    <div class="adm-form-group">
+                        <label for="form-car-category">Categoria no Site</label>
+                        <select id="form-car-category">
+                            <option value="repasse">Repasse Lojista</option>
+                            <option value="seminovos">Seminovo Selecionado</option>
+                            <option value="oportunidade">Oportunidade Única</option>
+                        </select>
+                    </div>
+                    <div class="adm-form-group">
+                        <label for="form-car-status">Status de Disponibilidade</label>
+                        <select id="form-car-status">
+                            <option value="available">Disponível no Site</option>
+                            <option value="reserved">Reservado (Com Sinal)</option>
+                            <option value="sold">Vendido (Concluído)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- PREÇOS & MARGEM -->
+                <div class="form-grid-2" style="background:var(--adm-surface-2); padding:14px; border-radius:var(--radius-md); margin-bottom:16px;">
+                    <div class="adm-form-group" style="margin-bottom:0;">
+                        <label for="form-car-price">Preço Anunciado Venda / Repasse (R$) *</label>
+                        <input type="number" id="form-car-price" placeholder="Ex: 79900" required>
+                    </div>
+                    <div class="adm-form-group" style="margin-bottom:0;">
+                        <label for="form-car-fipe">Valor Tabela FIPE (R$)</label>
+                        <input type="number" id="form-car-fipe" placeholder="Ex: 91500">
+                    </div>
+                    <div style="grid-column: span 2; margin-top:8px;">
+                        <span id="form-car-economy-calc" style="font-size:0.82rem; color:var(--brand-green); font-weight:600;"></span>
+                    </div>
+                    <div class="adm-form-group" style="grid-column: span 2; margin-top:8px; margin-bottom:0;">
+                        <label for="form-car-cost">Custo Interno de Compra (R$) <small style="color:var(--text-dim);">(Visível apenas no admin para controle de lucro)</small></label>
+                        <input type="number" id="form-car-cost" placeholder="Ex: 68000">
+                    </div>
+                </div>
+
+                <!-- FOTOS DO VEÍCULO (UPLOAD DO DISPOSITIVO / CELULAR / COMPUTADOR & MULTI-FOTOS) -->
+                <div class="adm-form-group" style="background:var(--adm-surface-2); padding:16px; border-radius:var(--radius-md); border:1px solid var(--adm-border);">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                        <label style="margin:0; font-weight:700; color:#fff;">
+                            <i class="fas fa-camera" style="color:var(--brand-orange)"></i> Fotos do Veículo (Upload do Dispositivo) *
+                        </label>
+                        <span id="vehicle-photos-count" style="font-size:0.75rem; color:var(--brand-orange); font-weight:600;">0 fotos</span>
+                    </div>
+                    <p style="font-size:0.78rem; color:var(--text-muted); margin-bottom:12px;">
+                        Carregue fotos reais direto do seu celular ou computador. Você pode selecionar <strong>mais de uma imagem</strong> para compor a galeria do veículo no site!
+                    </p>
+
+                    <!-- Input de Arquivos Oculto -->
+                    <input type="file" id="form-car-file-input" accept="image/*" multiple style="display:none;">
+
+                    <!-- Zona de Upload Clicável / Drag-and-drop -->
+                    <div class="image-upload-zone" id="car-upload-zone" onclick="document.getElementById('form-car-file-input').click()">
+                        <div class="upload-zone-icon">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                        </div>
+                        <div class="upload-zone-text">
+                            <strong>Toque para selecionar fotos do celular ou arraste arquivos aqui</strong>
+                            <span>JPG, PNG, WebP (ajuste automático e alta resolução) • Suporta várias fotos</span>
+                        </div>
+                        <button type="button" class="btn-upload-trigger" onclick="event.stopPropagation(); document.getElementById('form-car-file-input').click();">
+                            <i class="fas fa-images"></i> Selecionar Fotos do Dispositivo
+                        </button>
+                    </div>
+
+                    <!-- Galeria de Pré-visualização de Imagens do Veículo -->
+                    <div id="vehicle-gallery-preview" class="vehicle-gallery-preview-grid"></div>
+
+                    <!-- Presets Rápidos / URL Opcional -->
+                    <details style="margin-top:14px; font-size:0.78rem; color:var(--text-dim);">
+                        <summary style="cursor:pointer; color:var(--text-muted); font-weight:600;">
+                            <i class="fas fa-sliders-h"></i> Opções avançadas (Presets do Pátio ou URL manual)
+                        </summary>
+                        <div style="padding-top:10px;">
+                            <input type="text" id="form-car-image" placeholder="URL ou Caminho da imagem de capa..." style="margin-bottom:8px;">
+                            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                                <span>Presets rápidos:</span>
+                                <button type="button" class="btn-secondary btn-sm" onclick="addVehicleImagePreset('images/duster.jpg')">Duster</button>
+                                <button type="button" class="btn-secondary btn-sm" onclick="addVehicleImagePreset('images/1.png')">Pátio 1</button>
+                                <button type="button" class="btn-secondary btn-sm" onclick="addVehicleImagePreset('images/2.png')">Pátio 2</button>
+                                <button type="button" class="btn-secondary btn-sm" onclick="addVehicleImagePreset('images/3.png')">Pátio 3</button>
+                                <button type="button" class="btn-secondary btn-sm" onclick="addVehicleImagePreset('images/4.png')">Pátio 4</button>
+                            </div>
+                        </div>
+                    </details>
+                </div>
+
+                <div class="adm-form-group">
+                    <label for="form-car-features">Opcionais e Destaques (separados por vírgula):</label>
+                    <input type="text" id="form-car-features" placeholder="Ex: Ar-condicionado digital, Câmera de ré, Rodas aro 17, Multimídia, Chave presencial">
+                </div>
+
+                <div class="adm-form-group">
+                    <label for="form-car-desc">Descrição Comercial & Observações:</label>
+                    <textarea id="form-car-desc" rows="3" placeholder="Veículo impecável, revisado, documentação em dia..."></textarea>
+                </div>
+
+                <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:20px;">
+                    <button type="button" class="btn-secondary" onclick="closeVehicleModal()">Cancelar</button>
+                    <button type="submit" class="btn-primary"><i class="fas fa-save"></i> Salvar no Estoque</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: CADASTRO / EDIÇÃO DE PEÇA -->
+    <div class="adm-modal-backdrop" id="adm-part-modal">
+        <div class="adm-modal">
+            <div class="adm-modal-header">
+                <h3 id="part-modal-title">Cadastrar Nova Autopeça</h3>
+                <button class="modal-close-icon" onclick="closePartModal()"><i class="fas fa-times"></i></button>
+            </div>
+
+            <form id="part-form">
+                <div class="adm-form-group">
+                    <label for="form-part-title">Nome / Título da Peça *</label>
+                    <input type="text" id="form-part-title" placeholder="Ex: Motor Parcial Renault 1.6 16v SCe" required>
+                </div>
+
+                <div class="form-grid-2">
+                    <div class="adm-form-group">
+                        <label for="form-part-code">Código OEM / Referência *</label>
+                        <input type="text" id="form-part-code" placeholder="Ex: RN-SCE16-044" required>
+                    </div>
+                    <div class="adm-form-group">
+                        <label for="form-part-category">Categoria</label>
+                        <select id="form-part-category">
+                            <option value="motores">Motores & Câmbios</option>
+                            <option value="iluminacao">Faróis & Lanternas</option>
+                            <option value="lataria">Lataria & Funilaria</option>
+                            <option value="eletronica">Módulos & Eletrônica</option>
+                            <option value="rodas">Rodas & Suspensão</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="adm-form-group">
+                    <label for="form-part-compatibility">Veículos Compatíveis *</label>
+                    <input type="text" id="form-part-compatibility" placeholder="Ex: Renault Duster, Sandero, Logan (2018 a 2024)" required>
+                </div>
+
+                <div class="form-grid-2">
+                    <div class="adm-form-group">
+                        <label for="form-part-price">Preço à Vista (R$) *</label>
+                        <input type="number" id="form-part-price" placeholder="Ex: 6800" required>
+                    </div>
+                    <div class="adm-form-group">
+                        <label for="form-part-cost">Preço de Custo (R$)</label>
+                        <input type="number" id="form-part-cost" placeholder="Ex: 4000">
+                    </div>
+                </div>
+
+                <div class="form-grid-2">
+                    <div class="adm-form-group">
+                        <label for="form-part-qty">Quantidade em Estoque</label>
+                        <input type="number" id="form-part-qty" value="1" min="0">
+                    </div>
+                    <div class="adm-form-group">
+                        <label for="form-part-warranty">Garantia & Procedência</label>
+                        <input type="text" id="form-part-warranty" value="90 Dias de Garantia com Nota Fiscal e Baixa Detran">
+                    </div>
+                </div>
+
+                <!-- FOTO DA AUTOPEÇA (UPLOAD DO DISPOSITIVO / CELULAR / PC) -->
+                <div class="adm-form-group" style="background:var(--adm-surface-2); padding:16px; border-radius:var(--radius-md); border:1px solid var(--adm-border);">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                        <label style="margin:0; font-weight:700; color:#fff;">
+                            <i class="fas fa-camera" style="color:var(--brand-orange)"></i> Foto da Peça (Upload do Dispositivo)
+                        </label>
+                    </div>
+                    <p style="font-size:0.78rem; color:var(--text-muted); margin-bottom:12px;">
+                        Envie a foto real da peça tirada do celular ou computador para melhor apresentação e confiabilidade no site.
+                    </p>
+
+                    <!-- Input de Arquivo Oculto da Peça -->
+                    <input type="file" id="form-part-file-input" accept="image/*" style="display:none;">
+
+                    <!-- Zona de Upload Clicável -->
+                    <div class="image-upload-zone part-upload-zone" id="part-upload-zone" onclick="document.getElementById('form-part-file-input').click()">
+                        <div class="upload-zone-icon">
+                            <i class="fas fa-camera"></i>
+                        </div>
+                        <div class="upload-zone-text">
+                            <strong>Toque para tirar foto no celular ou escolher do computador</strong>
+                            <span>Ajuste e enquadramento automático na página</span>
+                        </div>
+                        <button type="button" class="btn-upload-trigger" onclick="event.stopPropagation(); document.getElementById('form-part-file-input').click();">
+                            <i class="fas fa-upload"></i> Escolher Foto da Peça
+                        </button>
+                    </div>
+
+                    <!-- Preview da Peça -->
+                    <div style="display:flex; align-items:center; gap:14px; margin-top:12px;">
+                        <div class="part-preview-box">
+                            <img id="form-part-image-preview" src="images/pecas_hero.jpg" alt="Preview da peça">
+                        </div>
+                        <div>
+                            <span id="part-image-status" style="font-size:0.8rem; color:var(--brand-green); font-weight:600; display:block; margin-bottom:6px;">
+                                <i class="fas fa-check-circle"></i> Imagem pronta para exibição
+                            </span>
+                            <button type="button" class="btn-secondary btn-sm" onclick="document.getElementById('form-part-file-input').click();">
+                                <i class="fas fa-sync-alt"></i> Trocar Foto
+                            </button>
+                        </div>
+                    </div>
+
+                    <input type="hidden" id="form-part-image" value="images/pecas_hero.jpg">
+                </div>
+
+                <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:20px;">
+                    <button type="button" class="btn-secondary" onclick="closePartModal()">Cancelar</button>
+                    <button type="submit" class="btn-primary"><i class="fas fa-save"></i> Salvar Peça</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script src="js/data.js"></script>
+    <script src="js/admin.js"></script>
+</body>
+</html>

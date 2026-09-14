@@ -22,6 +22,32 @@ function initApp() {
     initFloatingWhatsApp();
     initMobileMenu();
     initSmoothScroll();
+    initStorageSync();
+}
+
+// --------------------------------------------------------------------------
+// SINCRONIZAÇÃO EM TEMPO REAL COM O PAINEL DE GESTÃO (PDV)
+// --------------------------------------------------------------------------
+function initStorageSync() {
+    window.addEventListener('tradecar_stock_updated', () => {
+        const activeFilter = document.querySelector('.filter-btn.active');
+        const cat = activeFilter ? activeFilter.dataset.category : 'all';
+        renderVehicles(cat);
+        const activePartFilter = document.querySelector('.parts-filter-btn.active');
+        const partCat = activePartFilter ? activePartFilter.dataset.partsCat : 'all';
+        renderAutoParts(partCat);
+    });
+
+    window.addEventListener('storage', (e) => {
+        if (e.key === 'tradecar_vehicles_v2' || e.key === 'tradecar_parts_v2') {
+            const activeFilter = document.querySelector('.filter-btn.active');
+            const cat = activeFilter ? activeFilter.dataset.category : 'all';
+            renderVehicles(cat);
+            const activePartFilter = document.querySelector('.parts-filter-btn.active');
+            const partCat = activePartFilter ? activePartFilter.dataset.partsCat : 'all';
+            renderAutoParts(partCat);
+        }
+    });
 }
 
 // --------------------------------------------------------------------------
@@ -64,7 +90,7 @@ function renderVehicles(category = 'all', searchQuery = '', sortBy = 'default') 
     const countBadge = document.getElementById('vehicles-count');
     if (!container) return;
 
-    let filtered = [...VEHICLES_DATA];
+    let filtered = [...TradeCarStorage.getVehicles()];
 
     if (category !== 'all') {
         filtered = filtered.filter(v => v.category === category);
@@ -91,7 +117,7 @@ function renderVehicles(category = 'all', searchQuery = '', sortBy = 'default') 
     }
 
     if (countBadge) {
-        countBadge.textContent = `${filtered.length} veículos disponíveis`;
+        countBadge.textContent = `${filtered.length} veículos no catálogo`;
     }
 
     if (filtered.length === 0) {
@@ -99,7 +125,7 @@ function renderVehicles(category = 'all', searchQuery = '', sortBy = 'default') 
             <div class="empty-state">
                 <i class="fas fa-car-side"></i>
                 <h3>Nenhum veículo encontrado</h3>
-                <p>Tente ajustar os filtros de busca ou consulte o Vagner Miyahira diretamente no WhatsApp para veículos sob encomenda.</p>
+                <p>Tente ajustar os filtros de busca ou consulte um executivo de vendas diretamente no WhatsApp para veículos sob encomenda.</p>
                 <button class="btn btn-primary" onclick="resetVehicleFilters()">
                     <i class="fas fa-undo"></i> Limpar Filtros
                 </button>
@@ -108,12 +134,24 @@ function renderVehicles(category = 'all', searchQuery = '', sortBy = 'default') 
         return;
     }
 
-    container.innerHTML = filtered.map(v => `
-        <article class="car-card" data-id="${v.id}">
+    container.innerHTML = filtered.map(v => {
+        const isSold = v.status === 'sold';
+        const isReserved = v.status === 'reserved';
+        const statusBadge = isSold ? `<span class="category-badge" style="background:#dc2626; color:#fff;"><i class="fas fa-check-circle"></i> Vendido</span>` :
+                            isReserved ? `<span class="category-badge" style="background:#d97706; color:#fff;"><i class="fas fa-clock"></i> Reservado</span>` :
+                            `<span class="category-badge category-${v.category}">${v.categoryLabel}</span>`;
+
+        const photoCountBadge = (v.images && Array.isArray(v.images) && v.images.length > 1)
+            ? `<span class="photo-count-badge"><i class="fas fa-camera"></i> ${v.images.length} fotos</span>`
+            : '';
+
+        return `
+        <article class="car-card ${isSold ? 'car-sold' : ''}" data-id="${v.id}">
             <div class="car-media">
                 <img src="${v.image}" alt="${v.title}" loading="lazy">
-                <span class="category-badge category-${v.category}">${v.categoryLabel}</span>
-                ${v.economy > 0 ? `<span class="economy-tag"><i class="fas fa-tag"></i> Economize ${formatBRL(v.economy)}</span>` : ''}
+                ${statusBadge}
+                ${photoCountBadge}
+                ${v.economy > 0 && !isSold ? `<span class="economy-tag"><i class="fas fa-tag"></i> Economize ${formatBRL(v.economy)}</span>` : ''}
             </div>
             
             <div class="car-content">
@@ -144,13 +182,20 @@ function renderVehicles(category = 'all', searchQuery = '', sortBy = 'default') 
                     <button class="btn btn-outline btn-sm" onclick="openVehicleDetails('${v.id}')">
                         <i class="fas fa-info-circle"></i> Ver Laudo & Detalhes
                     </button>
-                    <button class="btn btn-whatsapp btn-sm" onclick="negotiateCar('${v.id}')">
-                        <i class="fab fa-whatsapp"></i> Negociar
-                    </button>
+                    ${isSold ? `
+                        <button class="btn btn-outline btn-sm" disabled style="opacity:0.6; cursor:not-allowed;">
+                            <i class="fas fa-lock"></i> Indisponível
+                        </button>
+                    ` : `
+                        <button class="btn btn-whatsapp btn-sm" onclick="negotiateCar('${v.id}')">
+                            <i class="fab fa-whatsapp"></i> Negociar
+                        </button>
+                    `}
                 </div>
             </div>
         </article>
-    `).join('');
+        `;
+    }).join('');
 }
 
 function resetVehicleFilters() {
@@ -228,7 +273,7 @@ function renderAutoParts(category = 'all', searchQuery = '') {
     const container = document.getElementById('parts-grid');
     if (!container) return;
 
-    let filtered = [...AUTO_PARTS_DATA];
+    let filtered = [...TradeCarStorage.getParts()];
 
     if (category !== 'all') {
         filtered = filtered.filter(p => p.category === category);
@@ -248,9 +293,9 @@ function renderAutoParts(category = 'all', searchQuery = '') {
             <div class="empty-state">
                 <i class="fas fa-cogs"></i>
                 <h3>Peça não listada no catálogo online</h3>
-                <p>Nosso estoque físico conta com centenas de componentes. Fale com Vagner no WhatsApp para localizar sua peça imediatamente.</p>
+                <p>Nosso galpão conta com centenas de componentes físicos. Fale com nosso executivo de vendas no WhatsApp para verificar a peça no galpão imediatamente.</p>
                 <button class="btn btn-whatsapp" onclick="requestCustomPart()">
-                    <i class="fab fa-whatsapp"></i> Consultar Peça com Vagner
+                    <i class="fab fa-whatsapp"></i> Consultar com Executivo de Vendas
                 </button>
             </div>
         `;
@@ -271,7 +316,7 @@ function renderAutoParts(category = 'all', searchQuery = '') {
                 <p class="part-warranty"><i class="fas fa-shield-alt"></i> ${p.warranty}</p>
 
                 <div class="part-specs-list">
-                    ${p.specs.slice(0, 2).map(s => `<span>• ${s}</span>`).join('')}
+                    ${(p.specs || []).slice(0, 2).map(s => `<span>• ${s}</span>`).join('')}
                 </div>
 
                 <div class="part-footer">
@@ -280,7 +325,7 @@ function renderAutoParts(category = 'all', searchQuery = '') {
                         <span class="part-price">${formatBRL(p.price)}</span>
                     </div>
                     <button class="btn btn-whatsapp btn-sm" onclick="orderPart('${p.id}')">
-                        <i class="fab fa-whatsapp"></i> Comprar Peça
+                        <i class="fab fa-whatsapp"></i> Consultar / Comprar
                     </button>
                 </div>
             </div>
@@ -311,47 +356,67 @@ function initVehicleModal() {
 }
 
 window.openVehicleDetails = function(vehicleId) {
-    const vehicle = VEHICLES_DATA.find(v => v.id === vehicleId);
+    const vehicle = TradeCarStorage.getVehicles().find(v => v.id === vehicleId);
     if (!vehicle) return;
 
     const modal = document.getElementById('vehicle-modal');
     const modalBody = document.getElementById('modal-vehicle-content');
     if (!modal || !modalBody) return;
 
+    const laudo = vehicle.laudo || {
+        estrutura: "Aprovado sem avarias",
+        chassi: "Original e íntegro",
+        motor: "Revisado e testado",
+        documentacao: "Pronta para transferência",
+        origem: "Procedência comprovada"
+    };
+
+    const isSold = vehicle.status === 'sold';
+    const isReserved = vehicle.status === 'reserved';
+
+    const galleryImages = (vehicle.images && Array.isArray(vehicle.images) && vehicle.images.length > 0)
+        ? vehicle.images
+        : [vehicle.image, vehicle.secondaryImage, 'images/1.png', 'images/2.png'].filter(Boolean);
+
+    currentModalGallery = galleryImages;
+
     modalBody.innerHTML = `
         <div class="modal-vehicle-grid">
             <div class="modal-gallery">
                 <div class="main-modal-img">
-                    <img id="modal-main-image" src="${vehicle.image}" alt="${vehicle.title}">
+                    <img id="modal-main-image" src="${galleryImages[0]}" alt="${vehicle.title}">
                 </div>
                 <div class="thumb-list">
-                    <img src="${vehicle.image}" class="thumb active" onclick="switchModalImage('${vehicle.image}', this)">
-                    <img src="${vehicle.secondaryImage}" class="thumb" onclick="switchModalImage('${vehicle.secondaryImage}', this)">
-                    <img src="images/1.png" class="thumb" onclick="switchModalImage('images/1.png', this)">
-                    <img src="images/2.png" class="thumb" onclick="switchModalImage('images/2.png', this)">
+                    ${galleryImages.map((imgSrc, idx) => `
+                        <img src="${imgSrc}" class="thumb ${idx === 0 ? 'active' : ''}" onclick="switchModalGalleryImage(${idx})" alt="Foto ${idx + 1}">
+                    `).join('')}
                 </div>
 
                 <div class="laudo-box">
                     <h4><i class="fas fa-clipboard-check"></i> Resumo do Laudo de Procedência</h4>
                     <div class="laudo-items">
-                        <div class="laudo-item"><span class="status-ok"><i class="fas fa-check"></i> Estrutura:</span> ${vehicle.laudo.estrutura}</div>
-                        <div class="laudo-item"><span class="status-ok"><i class="fas fa-check"></i> Chassi/Motor:</span> ${vehicle.laudo.chassi}</div>
-                        <div class="laudo-item"><span class="status-ok"><i class="fas fa-check"></i> Mecânica:</span> ${vehicle.laudo.motor}</div>
-                        <div class="laudo-item"><span class="status-ok"><i class="fas fa-check"></i> Documentação:</span> ${vehicle.laudo.documentacao}</div>
-                        <div class="laudo-item"><span class="status-ok"><i class="fas fa-check"></i> Origem:</span> ${vehicle.laudo.origem}</div>
+                        <div class="laudo-item"><span class="status-ok"><i class="fas fa-check"></i> Estrutura:</span> ${laudo.estrutura}</div>
+                        <div class="laudo-item"><span class="status-ok"><i class="fas fa-check"></i> Chassi/Motor:</span> ${laudo.chassi}</div>
+                        <div class="laudo-item"><span class="status-ok"><i class="fas fa-check"></i> Mecânica:</span> ${laudo.motor}</div>
+                        <div class="laudo-item"><span class="status-ok"><i class="fas fa-check"></i> Documentação:</span> ${laudo.documentacao}</div>
+                        <div class="laudo-item"><span class="status-ok"><i class="fas fa-check"></i> Origem:</span> ${laudo.origem}</div>
                     </div>
                 </div>
             </div>
 
             <div class="modal-info">
-                <span class="category-badge category-${vehicle.category}">${vehicle.categoryLabel}</span>
+                <div style="display:flex; gap:8px; align-items:center; margin-bottom:10px;">
+                    <span class="category-badge category-${vehicle.category}">${vehicle.categoryLabel}</span>
+                    ${isSold ? `<span class="category-badge" style="background:#dc2626; color:#fff;"><i class="fas fa-check-circle"></i> Vendido</span>` : ''}
+                    ${isReserved ? `<span class="category-badge" style="background:#d97706; color:#fff;"><i class="fas fa-clock"></i> Reservado</span>` : ''}
+                </div>
                 <h2>${vehicle.title}</h2>
-                <p class="modal-desc">${vehicle.description}</p>
+                <p class="modal-desc">${vehicle.description || 'Veículo inspecionado e pronto para negociação.'}</p>
 
                 <div class="modal-price-box">
                     <div class="fipe-tag">Tabela FIPE: <strong>${formatBRL(vehicle.fipePrice)}</strong></div>
                     <div class="price-big">${formatBRL(vehicle.price)}</div>
-                    ${vehicle.economy > 0 ? `<div class="economy-alert"><i class="fas fa-arrow-down"></i> Você economiza ${formatBRL(vehicle.economy)} abaixo da FIPE</div>` : ''}
+                    ${vehicle.economy > 0 && !isSold ? `<div class="economy-alert"><i class="fas fa-arrow-down"></i> Você economiza ${formatBRL(vehicle.economy)} abaixo da FIPE</div>` : ''}
                 </div>
 
                 <div class="modal-specs-table">
@@ -367,13 +432,19 @@ window.openVehicleDetails = function(vehicleId) {
 
                 <h4>Itens e Opcionais</h4>
                 <ul class="features-list">
-                    ${vehicle.features.map(f => `<li><i class="fas fa-check-circle"></i> ${f}</li>`).join('')}
+                    ${(vehicle.features || []).map(f => `<li><i class="fas fa-check-circle"></i> ${f}</li>`).join('')}
                 </ul>
 
                 <div class="modal-cta-buttons">
-                    <button class="btn btn-whatsapp btn-lg" onclick="negotiateCar('${vehicle.id}')">
-                        <i class="fab fa-whatsapp"></i> Falar com Vagner Miyahira no WhatsApp
-                    </button>
+                    ${isSold ? `
+                        <button class="btn btn-secondary btn-lg" disabled style="opacity:0.6; cursor:not-allowed;">
+                            <i class="fas fa-lock"></i> Veículo Já Vendido
+                        </button>
+                    ` : `
+                        <button class="btn btn-whatsapp btn-lg" onclick="negotiateCar('${vehicle.id}')">
+                            <i class="fab fa-whatsapp"></i> Falar com Executivo de Vendas
+                        </button>
+                    `}
                     <button class="btn btn-secondary btn-lg" onclick="simulateThisVehicle(${vehicle.price}, '${vehicle.title}')">
                         <i class="fas fa-calculator"></i> Simular Financiamento Deste Veículo
                     </button>
@@ -386,6 +457,18 @@ window.openVehicleDetails = function(vehicleId) {
     document.body.style.overflow = 'hidden';
 };
 
+let currentModalGallery = [];
+
+window.switchModalGalleryImage = function(index) {
+    if (currentModalGallery[index]) {
+        const mainImg = document.getElementById('modal-main-image');
+        if (mainImg) mainImg.src = currentModalGallery[index];
+        document.querySelectorAll('.thumb-list .thumb').forEach((t, i) => {
+            t.classList.toggle('active', i === index);
+        });
+    }
+};
+
 window.switchModalImage = function(src, thumbEl) {
     const mainImg = document.getElementById('modal-main-image');
     if (mainImg) mainImg.src = src;
@@ -394,15 +477,16 @@ window.switchModalImage = function(src, thumbEl) {
 };
 
 window.negotiateCar = function(vehicleId) {
-    const vehicle = VEHICLES_DATA.find(v => v.id === vehicleId);
+    const vehicle = TradeCarStorage.getVehicles().find(v => v.id === vehicleId);
     if (!vehicle) return;
 
-    const message = `Olá *Vagner Miyahira*, tenho interesse no veículo do estoque:\n\n` +
+    const message = `Olá! Gostaria de falar com um executivo de vendas da *Trade Car - Vendas e Repasse*.\n\n` +
+        `Tenho interesse no seguinte veículo do estoque:\n` +
         `🚗 *Veículo:* ${vehicle.title}\n` +
         `📅 *Ano:* ${vehicle.year} | ⚡ *KM:* ${vehicle.km}\n` +
         `💰 *Valor Anunciado:* ${formatBRL(vehicle.price)} (FIPE: ${formatBRL(vehicle.fipePrice)})\n` +
         `🏷️ *Categoria:* ${vehicle.categoryLabel}\n\n` +
-        `Por favor, me informe a disponibilidade, forma de pagamento e se aceita proposta!`;
+        `Por favor, me informe a disponibilidade, detalhes da documentação e formas de pagamento!`;
 
     window.open(`https://wa.me/${COMPANY_CONFIG.whatsappNumber}?text=${encodeURIComponent(message)}`, '_blank');
 };
@@ -425,25 +509,27 @@ function initPartsModal() {
 }
 
 window.orderPart = function(partId) {
-    const part = AUTO_PARTS_DATA.find(p => p.id === partId);
+    const part = TradeCarStorage.getParts().find(p => p.id === partId);
     if (!part) return;
 
-    const message = `Olá *Vagner Miyahira*, gostaria de adquirir a seguinte peça do catálogo de autopeças:\n\n` +
+    const message = `Olá! Gostaria de falar com um executivo de vendas da *Trade Car - Vendas e Repasse*.\n\n` +
+        `Gostaria de consultar/adquirir a seguinte peça do catálogo:\n` +
         `⚙️ *Peça:* ${part.title}\n` +
-        `🏷️ *Código:* ${part.code}\n` +
+        `🏷️ *Código OEM:* ${part.code}\n` +
         `🚘 *Aplicação:* ${part.compatibility}\n` +
         `💵 *Valor:* ${formatBRL(part.price)}\n\n` +
-        `Gostaria de combinar a forma de envio/frete para o meu CEP e pagamento via PIX/Cartão.`;
+        `Gostaria de verificar fotos reais do galpão e combinar o frete sob consulta para meu CEP.`;
 
     window.open(`https://wa.me/${COMPANY_CONFIG.whatsappNumber}?text=${encodeURIComponent(message)}`, '_blank');
 };
 
 window.requestCustomPart = function() {
-    const message = `Olá *Vagner Miyahira*, estou procurando uma peça automotiva específica:\n\n` +
+    const message = `Olá! Gostaria de falar com um executivo de vendas da *Trade Car*.\n\n` +
+        `Estou procurando uma peça automotiva específica:\n` +
         `🚗 *Marca/Modelo/Ano do Veículo:* \n` +
         `⚙️ *Peça Desejada:* \n` +
         `🔢 *Código original (se souber):* \n\n` +
-        `Vocês possuem em estoque ou conseguem no pátio de repasse?`;
+        `Vocês possuem em estoque físico ou conseguem localizar para mim?`;
 
     window.open(`https://wa.me/${COMPANY_CONFIG.whatsappNumber}?text=${encodeURIComponent(message)}`, '_blank');
 };
@@ -471,38 +557,84 @@ function initSellCarForm() {
             return;
         }
 
-        const message = `Olá *Vagner Miyahira*, gostaria de avaliar meu veículo para VENDA / REPASSE IMEDIATO:\n\n` +
+        const message = `Olá! Gostaria de solicitar uma avaliação técnica para o meu veículo na *Trade Car*:\n\n` +
             `👤 *Nome:* ${name}\n` +
-            `📱 *Telefone/WhatsApp:* ${phone}\n` +
+            `📱 *WhatsApp:* ${phone}\n` +
             `🚗 *Veículo:* ${brandModel}\n` +
             `📅 *Ano/Modelo:* ${year}\n` +
             `⚡ *Quilometragem:* ${km || 'Não informada'}\n` +
             `💰 *Valor Pretendido:* ${price || 'A combinar'}\n` +
-            `📝 *Observações/Detalhes:* ${notes || 'Sem observações adicionais'}\n\n` +
-            `Aguardo sua proposta à vista via PIX!`;
+            `📝 *Observações:* ${notes || 'Sem detalhes adicionais'}\n\n` +
+            `Gostaria de agendar a análise pericial e verificar a proposta sob consulta!`;
 
-        showToast('Enviando dados da avaliação para o WhatsApp de Vagner...');
+        TradeCarStorage.saveLead({
+            type: 'Avaliação de Veículo',
+            name,
+            phone,
+            brandModel,
+            year,
+            km,
+            price,
+            notes
+        });
+
+        showToast('Enviando ficha para o WhatsApp do executivo de vendas...');
         window.open(`https://wa.me/${COMPANY_CONFIG.whatsappNumber}?text=${encodeURIComponent(message)}`, '_blank');
         form.reset();
     });
 }
 
 // --------------------------------------------------------------------------
-// BANCOS PARCEIROS
+// PROCESSO DE FINANCIAMENTO (FLUXO TRANSPARENTE SEM MARCAS DE BANCOS)
 // --------------------------------------------------------------------------
 function renderBankCards() {
     const container = document.getElementById('banks-grid');
     if (!container) return;
 
-    container.innerHTML = PARTNER_BANKS.map(b => `
+    const steps = [
+        {
+            icon: "fa-calculator",
+            step: "Passo 1",
+            title: "Simulação Estimada",
+            desc: "Ajuste o valor do veículo e entrada no simulador acima para estimar as parcelas aproximadas.",
+            badge: "Online e Instantâneo",
+            color: "#f97316"
+        },
+        {
+            icon: "fa-paper-plane",
+            step: "Passo 2",
+            title: "Envio da Proposta",
+            desc: "Envie a ficha pré-formatada diretamente no WhatsApp para nosso executivo de vendas.",
+            badge: "Sem Burocracia",
+            color: "#10b981"
+        },
+        {
+            icon: "fa-user-check",
+            step: "Passo 3",
+            title: "Análise Cadastral",
+            desc: "Nossa equipe submete seu cadastro junto às principais financeiras parceiras com as melhores taxas.",
+            badge: "Conduzido pela Equipe",
+            color: "#3b82f6"
+        },
+        {
+            icon: "fa-key",
+            step: "Passo 4",
+            title: "Aprovação & Retirada",
+            desc: "Crédito liberado com segurança jurídica e laudo cautelar aprovado para retirada ou envio do carro.",
+            badge: "Agilidade Total",
+            color: "#8b5cf6"
+        }
+    ];
+
+    container.innerHTML = steps.map(s => `
         <div class="bank-card">
-            <div class="bank-badge-icon" style="color: ${b.color}">
-                <i class="fas fa-university"></i>
+            <div class="bank-badge-icon" style="color: ${s.color}">
+                <i class="fas ${s.icon}"></i>
             </div>
-            <h4>${b.name}</h4>
-            <span class="bank-tag">${b.tag}</span>
-            <p class="bank-speed"><i class="fas fa-bolt"></i> ${b.approvalSpeed}</p>
-            <span class="bank-highlight">${b.highlight}</span>
+            <span style="font-size:0.75rem; text-transform:uppercase; letter-spacing:1px; color:var(--text-muted); font-weight:700;">${s.step}</span>
+            <h4 style="margin:4px 0 8px;">${s.title}</h4>
+            <p style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:12px; line-height:1.4;">${s.desc}</p>
+            <span class="bank-highlight" style="background:rgba(255,255,255,0.05); color:${s.color}; border:1px solid rgba(255,255,255,0.1);">${s.badge}</span>
         </div>
     `).join('');
 }
@@ -519,9 +651,9 @@ function renderTestimonials() {
             <div class="stars">
                 ${'<i class="fas fa-star"></i>'.repeat(t.rating)}
             </div>
-            <p class="quote">"${t.text}"</p>
-            <div class="author-meta">
-                <div class="avatar"><i class="fas fa-user-tie"></i></div>
+            <p class="testimonial-text">"${t.text}"</p>
+            <div class="testimonial-author">
+                <div class="author-avatar"><i class="fas fa-user"></i></div>
                 <div>
                     <strong>${t.name}</strong>
                     <span>${t.role} • ${t.location}</span>
@@ -532,15 +664,15 @@ function renderTestimonials() {
 }
 
 // --------------------------------------------------------------------------
-// FAQ ACCORDION
+// PERGUNTAS FREQUENTES (FAQ ACCORDION)
 // --------------------------------------------------------------------------
 function renderFAQs() {
     const container = document.getElementById('faq-accordion');
     if (!container) return;
 
-    container.innerHTML = FAQS_DATA.map((f, index) => `
-        <div class="faq-item ${index === 0 ? 'active' : ''}">
-            <button class="faq-question">
+    container.innerHTML = FAQS_DATA.map((f, i) => `
+        <div class="faq-item ${i === 0 ? 'active' : ''}">
+            <button class="faq-question" aria-expanded="${i === 0}">
                 <span>${f.question}</span>
                 <i class="fas fa-chevron-down"></i>
             </button>
@@ -552,7 +684,10 @@ function renderFAQs() {
 }
 
 function initFAQAccordion() {
-    document.addEventListener('click', (e) => {
+    const container = document.getElementById('faq-accordion');
+    if (!container) return;
+
+    container.addEventListener('click', (e) => {
         const questionBtn = e.target.closest('.faq-question');
         if (!questionBtn) return;
 
@@ -560,47 +695,60 @@ function initFAQAccordion() {
         const isActive = item.classList.contains('active');
 
         document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('active'));
+
         if (!isActive) {
             item.classList.add('active');
+            questionBtn.setAttribute('aria-expanded', 'true');
+        } else {
+            questionBtn.setAttribute('aria-expanded', 'false');
         }
     });
 }
 
 // --------------------------------------------------------------------------
-// CONTADOR DE ESTATÍSTICAS ANIMADO
+// CONTADORES NUMÉRICOS ANIMADOS
 // --------------------------------------------------------------------------
 function initStatsCounter() {
-    const statElements = document.querySelectorAll('.stat-number[data-target]');
-    if (!statElements.length) return;
+    const stats = document.querySelectorAll('.stat-number');
+    let triggered = false;
 
-    const observer = new IntersectionObserver((entries, obs) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                const el = entry.target;
-                const target = parseInt(el.dataset.target, 10) || 0;
-                const prefix = el.dataset.prefix || '';
-                const suffix = el.dataset.suffix || '';
-                let count = 0;
-                const duration = 1600;
-                const stepTime = 25;
-                const increment = Math.ceil(target / (duration / stepTime));
+    const checkScroll = () => {
+        if (triggered) return;
+        const triggerPos = window.innerHeight * 0.85;
 
-                const timer = setInterval(() => {
-                    count += increment;
-                    if (count >= target) {
-                        el.textContent = `${prefix}${target.toLocaleString('pt-BR')}${suffix}`;
-                        clearInterval(timer);
-                    } else {
-                        el.textContent = `${prefix}${count.toLocaleString('pt-BR')}${suffix}`;
-                    }
-                }, stepTime);
-
-                obs.unobserve(el);
+        stats.forEach(stat => {
+            const rect = stat.getBoundingClientRect();
+            if (rect.top <= triggerPos) {
+                triggered = true;
+                animateNumbers();
             }
         });
-    }, { threshold: 0.3 });
+    };
 
-    statElements.forEach(el => observer.observe(el));
+    window.addEventListener('scroll', checkScroll);
+    checkScroll();
+}
+
+function animateNumbers() {
+    const stats = document.querySelectorAll('.stat-number');
+    stats.forEach(el => {
+        const target = parseInt(el.dataset.target) || 0;
+        const prefix = el.dataset.prefix || '';
+        const suffix = el.dataset.suffix || '';
+        let current = 0;
+        const duration = 1500;
+        const stepTime = 20;
+        const stepVal = target / (duration / stepTime);
+
+        const timer = setInterval(() => {
+            current += stepVal;
+            if (current >= target) {
+                current = target;
+                clearInterval(timer);
+            }
+            el.textContent = `${prefix}${Math.round(current).toLocaleString('pt-BR')}${suffix}`;
+        }, stepTime);
+    });
 }
 
 // --------------------------------------------------------------------------
@@ -635,15 +783,15 @@ function initFloatingWhatsApp() {
 window.quickWhatsAppChat = function(type) {
     let msg = "";
     if (type === 'repasse') {
-        msg = "Olá Vagner Miyahira, estou no site da Trade Car e gostaria de ver o estoque completo de REPASSE e oportunidades para lojistas!";
+        msg = "Olá! Gostaria de falar com um executivo de vendas da Trade Car. Quero consultar o estoque de veículos de REPASSE e oportunidades!";
     } else if (type === 'pecas') {
-        msg = "Olá Vagner Miyahira, estou no site da Trade Car e preciso de uma peça automotiva original. Vocês têm disponível?";
+        msg = "Olá! Gostaria de falar com um executivo de vendas da Trade Car para consultar a disponibilidade de uma autopeça.";
     } else if (type === 'financiamento') {
-        msg = "Olá Vagner Miyahira, estou no site da Trade Car e gostaria de simular um financiamento com aprovação rápida de crédito!";
+        msg = "Olá! Gostaria de falar com um executivo de vendas da Trade Car para fazer uma simulação e análise de crédito para financiamento.";
     } else if (type === 'vender') {
-        msg = "Olá Vagner Miyahira, tenho um carro e quero vender/repassar para a Trade Car à vista via PIX!";
+        msg = "Olá! Gostaria de falar com um executivo de vendas da Trade Car para avaliação e intermediação/repasse do meu veículo sob consulta.";
     } else {
-        msg = "Olá Vagner Miyahira, estou no site oficial da Trade Car - Vendas e Repasse e gostaria de atendimento!";
+        msg = "Olá! Gostaria de falar com um executivo de vendas da Trade Car - Vendas e Repasse.";
     }
 
     window.open(`https://wa.me/${COMPANY_CONFIG.whatsappNumber}?text=${encodeURIComponent(msg)}`, '_blank');
