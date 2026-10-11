@@ -1,0 +1,15 @@
+import { createCipheriv,createDecipheriv,createHash,randomBytes } from 'node:crypto';
+export const integrationFields={whatsapp:['WHATSAPP_ACCESS_TOKEN','WHATSAPP_PHONE_NUMBER_ID','WHATSAPP_VERIFY_TOKEN','META_APP_SECRET'],social:['META_PAGE_ID','META_PAGE_ACCESS_TOKEN','INSTAGRAM_ACCOUNT_ID','META_GRAPH_VERSION'],fiscal:['FOCUS_NFE_TOKEN']};
+function key(env){const master=env.INTEGRATION_ENCRYPTION_KEY||env.MONGO_URI;if(!master)throw Object.assign(Error('A conexão protegida ao Atlas precisa estar configurada para salvar integrações.'),{status:503});return createHash('sha256').update('TradeCar/integrations/v1\0'+master+'\0'+(env.MONGO_DB_NAME||'tradecar_shop')).digest();}
+function decrypt(value,env,service){const data=JSON.parse(value),cipher=createDecipheriv('aes-256-gcm',key(env),Buffer.from(data.iv,'base64'));cipher.setAAD(Buffer.from(service));cipher.setAuthTag(Buffer.from(data.tag,'base64'));return JSON.parse(Buffer.concat([cipher.update(Buffer.from(data.body,'base64')),cipher.final()]).toString());}
+export async function integrationEnvironment(db,env){const rows=await Promise.all(Object.keys(integrationFields).map(async service=>({service,row:await db.get('SELECT value FROM config WHERE id=?',['integration:'+service])})));const result={...env};for(const {service,row}of rows){if(!row)continue;let values;try{values=decrypt(row.value,env,service)}catch{result.INTEGRATION_RECONNECT_REQUIRED=(result.INTEGRATION_RECONNECT_REQUIRED||[]).concat(service);continue;}for(const field of integrationFields[service])if(values[field])result[field]=values[field];}return result;}
+export async function saveIntegration(db,env,service,input){
+ const fields=integrationFields[service];if(!fields)throw Object.assign(Error('Integração inválida.'),{status:400});
+ const prior=await db.get('SELECT value FROM config WHERE id=?',['integration:'+service]),values=Object.fromEntries(fields.filter(field=>env[field]).map(field=>[field,env[field]]));if(prior){try{Object.assign(values,decrypt(prior.value,env,service))}catch{}};
+ for(const field of fields){const value=String(input[field]??'').trim();if(value.length>3000)throw Object.assign(Error('Credencial muito longa.'),{status:400});if(value)values[field]=value;}
+ const required=fields.filter(field=>!['INSTAGRAM_ACCOUNT_ID','META_GRAPH_VERSION'].includes(field));if(required.some(field=>!values[field]))throw Object.assign(Error('Preencha os campos obrigatórios para conectar o serviço.'),{status:400});
+ if(values.META_GRAPH_VERSION&&!/^v\d+\.0$/.test(values.META_GRAPH_VERSION))throw Object.assign(Error('Informe uma versão da API no formato v25.0.'),{status:400});
+ const iv=randomBytes(12),cipher=createCipheriv('aes-256-gcm',key(env),iv);cipher.setAAD(Buffer.from(service));const body=Buffer.concat([cipher.update(JSON.stringify(values)),cipher.final()]);
+ await db.run('INSERT INTO config(id,value) VALUES(?,?) ON CONFLICT(id) DO UPDATE SET value=excluded.value',['integration:'+service,JSON.stringify({iv:iv.toString('base64'),tag:cipher.getAuthTag().toString('base64'),body:body.toString('base64')})]);
+ return{ok:true};
+}

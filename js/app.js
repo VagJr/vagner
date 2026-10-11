@@ -806,9 +806,13 @@ function initMobileMenu() {
     const icon = toggle ? toggle.querySelector('i') : null;
 
     if (toggle && nav) {
+        toggle.setAttribute('aria-controls', 'main-nav');
+        toggle.setAttribute('aria-expanded', 'false');
         toggle.addEventListener('click', () => {
             const isActive = nav.classList.toggle('active');
             toggle.classList.toggle('active');
+            toggle.setAttribute('aria-expanded', String(isActive));
+            toggle.setAttribute('aria-label', isActive ? 'Fechar menu mobile' : 'Abrir menu mobile');
             if (icon) {
                 icon.className = isActive ? 'fas fa-times' : 'fas fa-bars';
             }
@@ -819,11 +823,19 @@ function initMobileMenu() {
             link.addEventListener('click', () => {
                 nav.classList.remove('active');
                 toggle.classList.remove('active');
+                toggle.setAttribute('aria-expanded', 'false');
+                toggle.setAttribute('aria-label', 'Abrir menu mobile');
                 if (icon) {
                     icon.className = 'fas fa-bars';
                 }
                 document.body.style.overflow = 'auto';
             });
+        });
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape' && nav.classList.contains('active')) {
+                toggle.click();
+                toggle.focus();
+            }
         });
     }
 }

@@ -1,0 +1,25 @@
+name: Processar atendimento e publicações TradeCar
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: tradecar-jobs
+  cancel-in-progress: false
+jobs:
+  process:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Processar fila autenticada
+        run: |
+          TOKEN=$(curl --fail --silent --show-error \
+            -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=https%3A%2F%2Fwww.tradecarshop.com.br%2Fapi%2Fcron" | jq -er '.value')
+          echo "::add-mask::$TOKEN"
+          curl --fail-with-body --silent --show-error --max-time 60 \
+            -H "Authorization: Bearer $TOKEN" \
+            'https://www.tradecarshop.com.br/api/cron'
