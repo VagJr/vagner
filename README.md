@@ -14,7 +14,7 @@ O projeto é `vagner`, com domínio https://www.tradecarshop.com.br/. O arquivo 
 
 Nas variáveis protegidas da Vercel, salve `MONGO_URI`, `MONGO_DB_NAME=tradecar_shop`, `SITE_URL=https://www.tradecarshop.com.br` e `CRON_SECRET`. Não copie segredos para arquivos públicos. Se a primeira conta já foi criada no painel local conectado ao Atlas, ela será a mesma conta da hospedagem. Caso contrário, a instalação remota exige `SETUP_TOKEN`, que deve ser removido depois de criar a conta.
 
-O estoque anterior pode ser importado pelo painel como rascunho. Revise disponibilidade, preço, documentação e fotos antes de publicar cada item. Os dados usados nos testes locais são fictícios e ficam fora da base da operação.
+O estoque anterior pode ser importado pelo painel como rascunho ou por `node --env-file=.env scripts/import-legacy.mjs`. A importação preserva produtos já cadastrados. Revise disponibilidade, preço, documentação e fotos antes de publicar cada item. Os dados usados nos testes locais são fictícios e ficam fora da base da operação.
 
 ## Atendimento e divulgação
 
@@ -28,7 +28,7 @@ O estoque anterior pode ser importado pelo painel como rascunho. Revise disponib
 
 O módulo fiscal prepara documentos e integra a Focus NFe. Antes de emitir notas reais, a empresa precisa ser habilitada no emissor e completar seus dados fiscais com a contabilidade. Configure `FOCUS_NFE_TOKEN`; o padrão é homologação. `FOCUS_NFE_PRODUCTION=true` habilita produção. O comprovante de venda não é nota fiscal.
 
-O domínio fornece `/sitemap.xml` e `/robots.txt`, páginas individuais com informações estruturadas e links de campanhas. Cadastre e verifique a propriedade no Google Search Console e no Bing Webmaster Tools, depois envie o sitemap. Isso não garante prazo ou posição nos resultados.
+O domínio fornece `/sitemap.xml` e `/robots.txt`, páginas individuais com informações estruturadas e links de campanhas. Para a verificação por tag HTML, salve apenas o valor do token Google ou Bing em Configurações: ele passa a aparecer no HTML inicial, com atualização de cache em até 30 segundos. Cadastre e verifique a propriedade no Google Search Console e no Bing Webmaster Tools, depois envie o sitemap. Isso não garante prazo ou posição nos resultados.
 
 ## Verificação
 

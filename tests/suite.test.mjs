@@ -7,6 +7,39 @@ import { createHmac, randomBytes } from 'node:crypto';
 import { database, migrate } from '../server/db.mjs';
 import { handle, seedRules, now, processJobs } from '../server/core.mjs';
 
+test('tokens de busca aparecem no HTML inicial escapados e o site continua disponível sem banco',async()=>{
+ const f=await fixture();
+ try{
+  await f.db.run('INSERT INTO config(id,value) VALUES(?,?)',['business',JSON.stringify({searchConsoleVerification:'google-ownership',bingVerification:'"><script>alert(1)</script>'})]);
+  const page=await f.request('/');assert.equal(page.status,200);assert.match(page.body,/<meta name="google-site-verification" content="google-ownership">/);
+  assert.match(page.body,/name="msvalidate.01" content="&quot;&gt;&lt;script&gt;/);assert.ok(!page.body.includes('<script>alert(1)</script>'));
+  const fallback=await handle(new Request('https://www.tradecarshop.com.br/'),{get:async()=>{throw Error('offline')}},{});assert.equal(fallback.status,200);assert.match(await fallback.text(),/Trade Car/);
+ }finally{f.close()}
+});
+
+test('catálogo anterior é preservado como rascunho sem sobrescrever produtos revisados',async()=>{
+ const f=await fixture();
+ try{
+  const first=await f.request('/api/admin/catalog/legacy',{});assert.equal(first.status,200);assert.ok(first.body.imported>0);
+  const p=await f.db.get('SELECT * FROM products LIMIT 1');assert.equal(p.status,'draft');
+  await f.db.run('UPDATE products SET title=?,status=? WHERE id=?',['Produto revisado','available',p.id]);
+  const again=await f.request('/api/admin/catalog/legacy',{});assert.equal(again.body.imported,0);
+  assert.equal((await f.db.get('SELECT title FROM products WHERE id=?',[p.id])).title,'Produto revisado');
+  assert.equal((await f.db.get('SELECT status FROM products WHERE id=?',[p.id])).status,'available');
+ }finally{f.close()}
+});
+
+test('prévia da branch aceita fichas da própria origem e bloqueia outros domínios',async()=>{
+ const f=await fixture();
+ try{
+  const branch='tradecar-git-review.vercel.app',env={...f.env,VERCEL:'1',VERCEL_URL:'tradecar-immutable.vercel.app',VERCEL_BRANCH_URL:branch};
+  const request=(host,origin)=>handle(new Request(`https://${host}/api/leads`,{method:'POST',headers:{origin,'content-type':'application/json'},body:JSON.stringify({name:'Teste de origem',phone:'13999998888',type:'support',consent:true})}),f.db,env);
+  assert.equal((await request(branch,`https://${branch}`)).status,201);
+  assert.equal((await request(branch,'https://other.example')).status,403);
+  assert.equal((await request('other.vercel.app','https://other.vercel.app')).status,403);
+ }finally{f.close()}
+});
+
 async function fixture(){const root=mkdtempSync(join(tmpdir(),'tradecar-test-')),db=database({DATABASE_PATH:join(root,'suite.db')});await migrate(db);await seedRules(db);let cookie='',csrf='';const env={SITE_URL:'http://localhost:3100',META_APP_SECRET:'test-signature-only'};async function request(path,body,method=body?'POST':'GET',headers={}){const init={method,headers:{origin:'http://localhost:3100',cookie,'x-csrf-token':csrf,...headers}};if(body!==undefined){init.body=JSON.stringify(body);init.headers['content-type']='application/json';}const r=await handle(new Request('http://localhost:3100'+path,init),db,env);const ct=r.headers.get('content-type');const result=ct?.includes('json')?await r.json():await r.text();return {status:r.status,body:result,headers:r.headers};}const password=randomBytes(16).toString('hex');const setup=await request('/api/auth/setup',{name:'Test admin',email:'test@example.invalid',password});assert.equal(setup.status,200);cookie=setup.headers.get('set-cookie').split(';')[0];csrf=setup.body.csrf;const product=async(quantity=1,title='Veículo de teste',kind='vehicle')=>{const r=await request('/api/admin/products',{title,kind,price:100000,cost:50000,quantity,status:'available',data:{image:'/images/duster.jpg',description:'Descrição de teste',year:'2022/2023'}});assert.equal(r.status,200);return r.body.id;};const sale=async(product_id,key=randomBytes(12).toString('hex'),quantity=1)=>request('/api/admin/sales',{customer:'Cliente teste',phone:'13999998888',due_date:'2026-10-20',request_key:key,items:[{product_id,quantity}]});return{db,request,product,sale,password,env,close:()=>db.close()};}
 
 test('acesso administrativo exige sessão, origem e CSRF; senha inicial não reaparece',async()=>{const f=await fixture();try{const noAuth=await handle(new Request('http://localhost:3100/api/admin/state'),f.db,f.env);assert.equal(noAuth.status,401);const noCsrf=await f.request('/api/admin/products',{kind:'part'},'POST',{'x-csrf-token':''});assert.equal(noCsrf.status,403);const wrongOrigin=await f.request('/api/admin/products',{},'POST',{origin:'https://other.example'});assert.equal(wrongOrigin.status,403);const repeat=await f.request('/api/auth/setup',{name:'x',email:'x@example.invalid',password:'long-password'});assert.equal(repeat.status,409);const a=await f.db.get('SELECT password FROM admins LIMIT 1');assert.notEqual(a.password,f.password);assert.equal((await f.request('/api/auth/login',{email:'test@example.invalid',password:'incorrect'})).status,401);}finally{f.close()}});

@@ -9,7 +9,7 @@ const root=resolve('public'),port=Number(process.env.PORT||3100);
 const mime={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.webp':'image/webp','.svg':'image/svg+xml'};
 const server=createServer(async(req,res)=>{
  let path;try{path=decodeURIComponent(new URL(req.url,'http://localhost').pathname)}catch{res.writeHead(400);res.end();return;}
- if(path.startsWith('/api/')||path==='/robots.txt'||path==='/sitemap.xml'||/^\/(veiculo|peca)\//.test(path))return transport(req,res);
+ if(path==='/'||path==='/index.html'||path.startsWith('/api/')||path==='/robots.txt'||path==='/sitemap.xml'||/^\/(veiculo|peca)\//.test(path))return transport(req,res);
  const target=resolve(root,'.'+(path==='/'?'/index.html':path));if(!target.startsWith(root+sep)||!existsSync(target)||!statSync(target).isFile()){res.writeHead(404);res.end('Página não encontrada');return;}
  res.writeHead(200,{'Content-Type':mime[extname(target)]||'application/octet-stream','X-Content-Type-Options':'nosniff','X-Frame-Options':'DENY',...(path==='/admin.html'?{'X-Robots-Tag':'noindex, nofollow'}:{})});res.end(readFileSync(target));
 });
