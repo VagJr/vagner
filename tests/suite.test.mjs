@@ -7,6 +7,17 @@ import { createHmac, randomBytes } from 'node:crypto';
 import { database, migrate } from '../server/db.mjs';
 import { handle, seedRules, now, processJobs } from '../server/core.mjs';
 
+test('ficha usa nome real do produto e os caminhos do bot existem no site',async()=>{
+ const f=await fixture();
+ try{
+  const pid=await f.product(1,'Câmbio do catálogo','part');
+  const r=await f.request('/api/leads',{name:'Cliente teste',phone:'13999998888',type:'part',product_id:pid,vehicle:'Nome desatualizado',consent:true});
+  assert.equal(r.status,201);const message=new URL(r.body.whatsappUrl).searchParams.get('text');assert.match(message,/Autopeça/);assert.match(message,/Câmbio do catálogo/);assert.ok(!message.includes('Nome desatualizado'));
+  assert.match((await f.request('/api/bot/preview',{message:'financiamento'})).body.response,/#financiamento/);
+  assert.match((await f.request('/api/bot/preview',{message:'avaliar'})).body.response,/#vender/);
+ }finally{f.close()}
+});
+
 test('tokens de busca aparecem no HTML inicial escapados e o site continua disponível sem banco',async()=>{
  const f=await fixture();
  try{
