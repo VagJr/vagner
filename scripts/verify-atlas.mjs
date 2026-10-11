@@ -1,16 +1,20 @@
 import assert from 'node:assert/strict';
 import { randomUUID, randomBytes, createHmac } from 'node:crypto';
 import { MongoClient } from 'mongodb';
+import { readFileSync } from 'node:fs';
 import { database,migrate } from '../server/db.mjs';
 import { handle,seedRules,now,processJobs } from '../server/core.mjs';
 if(!process.env.MONGO_URI)throw Error('Configure a conexão Atlas no ambiente.');
-const name='tradecar_shop_qa_'+Date.now(),env={SITE_URL:'http://localhost:3100',META_APP_SECRET:randomBytes(16).toString('hex')};
+const name='tradecar_shop_qa_'+Date.now(),env={SITE_URL:'http://localhost:3100',META_APP_SECRET:randomBytes(16).toString('hex'),INTEGRATION_ENCRYPTION_KEY:randomBytes(32).toString('hex')};
 const db=database({...process.env,MONGO_DB_NAME:name});let cookie='',csrf='';
 async function request(path,body,method=body?'POST':'GET',headers={}){const init={method,headers:{origin:env.SITE_URL,cookie,'x-csrf-token':csrf,...headers}};if(body){init.body=JSON.stringify(body);init.headers['content-type']='application/json'}const res=await handle(new Request(env.SITE_URL+path,init),db,env);return{status:res.status,body:await res.json(),headers:res.headers}}
 try{
  await migrate(db);await seedRules(db);
  const setup=await request('/api/auth/setup',{name:'Teste Atlas',email:'qa@example.invalid',password:randomBytes(16).toString('hex')});assert.equal(setup.status,200);cookie=setup.headers.get('set-cookie').split(';')[0];csrf=setup.body.csrf;
  assert.equal((await request('/api/admin/state')).status,200);
+ const connection=await request('/api/admin/integrations',{service:'fiscal',FOCUS_NFE_TOKEN:'test-focus-secret'});assert.equal(connection.status,200);const secretState=await request('/api/admin/state');assert.equal(secretState.body.integrations.fiscal,true);assert.ok(!JSON.stringify(secretState.body).includes('test-focus-secret'));
+ const photo=await handle(new Request(env.SITE_URL+'/api/admin/images',{method:'POST',headers:{origin:env.SITE_URL,cookie,'x-csrf-token':csrf,'content-type':'image/webp'},body:readFileSync(new URL('../images/optimized/duster.webp',import.meta.url))}),db,env);assert.equal(photo.status,201);const uploaded=await photo.json();
+ const publicPhoto=await handle(new Request(env.SITE_URL+uploaded.url),db,env);assert.equal(publicPhoto.status,200);assert.equal(publicPhoto.headers.get('content-type'),'image/webp');assert.ok((await publicPhoto.arrayBuffer()).byteLength>1000);
  const create=async(quantity=1)=>{const r=await request('/api/admin/products',{kind:'vehicle',title:'Teste isolado',price:100000,cost:50000,quantity,status:'available',data:{image:'/images/duster.jpg'}});assert.equal(r.status,200);return r.body.id};
  const p=await create(3),key=randomUUID(),saleBody={customer:'Teste',phone:'13999998888',request_key:key,due_date:'2026-10-20',items:[{product_id:p,quantity:1}]};
  const sale=await request('/api/admin/sales',saleBody);assert.equal(sale.status,201);assert.equal((await db.get('SELECT quantity FROM products WHERE id=?',[p])).quantity,2);assert.equal((await request('/api/admin/sales',saleBody)).body.id,sale.body.id);
@@ -21,7 +25,7 @@ try{
  assert.equal((await request('/api/webhooks/whatsapp',inbound,'POST',{'x-hub-signature-256':signature})).status,200);assert.equal((await request('/api/webhooks/whatsapp',inbound,'POST',{'x-hub-signature-256':signature})).status,200);assert.equal((await db.get('SELECT COUNT(*) AS n FROM messages')).n,1);
  const jobs=await processJobs(db,env);assert.equal(jobs.sent,0);
  const state=await request('/api/admin/state');assert.equal(state.status,200);assert.ok(state.body.products.length===2);
- console.log('Atlas: sessão, estoque, venda, reversão, ficha e webhook verificados em base de teste isolada.');
+ console.log('Atlas: sessão, fotos persistentes, estoque, venda, reversão, ficha e webhook verificados em base de teste isolada.');
 }finally{
  await db.close();
  if(!/^tradecar_shop_qa_\d+$/.test(name))throw Error('Nome de teste inválido.');

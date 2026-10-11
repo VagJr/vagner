@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 
 // Only the application's fixed, parameterized repository statements are accepted.
 // Visitors never supply a query. This adapter keeps local SQLite and Atlas behavior aligned.
-const tables=new Set(['migrations','admins','sessions','config','products','leads','sales','sale_items','ledger','movements','messages','conversations','bot_rules','jobs','webhook_events','fiscal','audit','rate_limits']);
+const tables=new Set(['migrations','images','admins','sessions','config','products','leads','sales','sale_items','ledger','movements','messages','conversations','bot_rules','jobs','webhook_events','fiscal','audit','rate_limits']);
 const stamp=()=>new Date().toISOString();
 const base={admins:{role:'admin'},products:{cost:0,quantity:1,status:'draft',data:'{}',revision:1},leads:{stage:'new',owner:'',notes:'',data:'{}',source:'site',consent:0},sales:{phone:'',status:'confirmed'},sale_items:{unit_cost:0},ledger:{status:'pending'},conversations:{handoff:0},bot_rules:{enabled:1,priority:0},jobs:{status:'draft',attempts:0}};
 function collection(db,name){if(!tables.has(name))throw Error('REPOSITORY_STATEMENT_NOT_SUPPORTED');return db.collection(name)}

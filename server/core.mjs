@@ -1,6 +1,9 @@
 import { randomBytes, createHash, scryptSync, timingSafeEqual, createHmac } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { storefront } from './storefront.mjs';
+import { uploadImage,serveImage } from './images.mjs';
+import { integrationEnvironment,saveIntegration } from './integrations.mjs';
+import { schedulerAuthorized } from './scheduler.mjs';
 
 export const now=()=>new Date().toISOString();
 const id=()=>randomBytes(16).toString('hex');
@@ -30,7 +33,7 @@ const publicProduct=p=>({id:p.id,kind:p.kind,title:p.title,price:p.price,quantit
 const product=p=>({...p,data:JSON.parse(p.data)});
 const job=j=>({...j,payload:JSON.parse(j.payload)});
 async function body(req){if(!req.headers.get('content-type')?.includes('application/json'))fail(415,'Envie dados em JSON.');const raw=await req.text();if(Buffer.byteLength(raw)>1000000)fail(413,'Arquivo muito grande.');try{return JSON.parse(raw)}catch{fail(400,'Dados inválidos.')}}
-function imageUrl(value){const s=text(value,1500);if(!s)return '';if(/^\/?images\/(?:optimized\/)?[a-zA-Z0-9 ._()-]+\.(png|jpe?g|webp)$/i.test(s))return '/'+s.replace(/^\//,'');try{const u=new URL(s);if(u.protocol==='https:')return u.href}catch{}fail(400,'Use uma URL HTTPS de foto ou um arquivo em images.');}
+function imageUrl(value){const s=text(value,1500);if(!s)return '';if(/^\/?images\/(?:optimized\/|uploads\/)?[a-zA-Z0-9 ._()-]+\.(png|jpe?g|webp)$/i.test(s))return '/'+s.replace(/^\//,'');try{const u=new URL(s);if(u.protocol==='https:')return u.href}catch{}fail(400,'Use uma URL HTTPS de foto ou um arquivo em images.');}
 function cleanProduct(b){
  const data=b.data||{};
  const d={brand:text(data.brand,100),model:text(data.model,150),year:text(data.year,20),km:text(data.km,30),transmission:text(data.transmission,80),fuel:text(data.fuel,50),color:text(data.color,80),category:text(data.category,80),code:text(data.code,100),compatibility:text(data.compatibility,400),description:text(data.description,4000),image:imageUrl(data.image),images:(Array.isArray(data.images)?data.images:[]).slice(0,12).map(imageUrl),inspection:text(data.inspection,200),documentation:text(data.documentation,500),location:text(data.location,100),featured:!!data.featured};
@@ -82,7 +85,12 @@ export async function botAnswer(db,input,n){
  const conv=await db.get('SELECT handoff FROM conversations WHERE phone=?',[n]);if(conv?.handoff||!c.botEnabled)return null;
  const rules=await db.all('SELECT * FROM bot_rules WHERE enabled=1 ORDER BY priority DESC');
  const rule=rules.find(r=>r.keywords.split(',').some(k=>{const word=k.trim().toLowerCase();return word&&(word.length===1?normalized.trim()===word:normalized.includes(word))}));
- const response=rule?.response||`Olá! Sou {botName}, assistente virtual da TradeCar.\n1 • Veículos e repasse\n2 • Autopeças\n3 • Financiamento\n4 • Avaliação do seu veículo\n5 • Falar com um executivo\nDigite PARAR para suspender as respostas automáticas.`;
+ let response=rule?.response||`Olá! Sou {botName}, assistente virtual da TradeCar.\n1 • Veículos e repasse\n2 • Autopeças\n3 • Financiamento\n4 • Avaliação do seu veículo\n5 • Falar com um executivo\nDigite PARAR para suspender as respostas automáticas.`;
+ if(!rule||['stock','parts'].includes(rule.id)){
+  const available=await db.all("SELECT * FROM products WHERE status='available' AND quantity>0 ORDER BY updated_at DESC LIMIT 100"),fold=s=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase(),query=fold(input);
+  const matched=available.filter(p=>p.title.split(/\s+/).filter(word=>word.length>3).some(word=>query.includes(fold(word)))),list=(matched.length?matched:rule?available.filter(p=>p.kind===(rule.id==='parts'?'part':'vehicle')):[]).slice(0,3);
+  if(list.length){const items=list.map(p=>`${p.title} • ${money(p.price)}\n{site}/${p.kind==='vehicle'?'veiculo':'peca'}/${p.id}`).join('\n\n');response=matched.length?`Encontrei estas opções disponíveis no catálogo:\n\n${items}\n\nA equipe confirma os detalhes e as condições da negociação.`:response+'\n\nDisponíveis no catálogo:\n'+items;}
+ }
  return response.replace(/\{(site|location|hours|botName)\}/g,(_,key)=>key==='site'?c.siteUrl:c[key]);
 }
 async function whatsappWebhook(req,db,env){
@@ -108,9 +116,10 @@ async function whatsappWebhook(req,db,env){
  return json({received:true});
 }
 async function graph(env,path,data,token){const version=env.META_GRAPH_VERSION||'v25.0';if(!/^v\d+\.0$/.test(version))throw Error('Configure META_GRAPH_VERSION.');const res=await fetch(`https://graph.facebook.com/${version}/${path}`,{method:data?'POST':'GET',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:data?JSON.stringify(data):undefined,signal:AbortSignal.timeout(20000)});const r=await res.json();if(!res.ok)throw Object.assign(Error(`Meta recusou a operação (código ${r.error?.code||res.status}).`),{rejected:true});return r;}
-export async function processJobs(db,env){
+export async function processJobs(db,env,options={}){
+ env=await integrationEnvironment(db,env);
  await db.run("UPDATE jobs SET status='uncertain',error='A execução foi interrompida. Confira no provedor antes de tentar novamente.' WHERE status='processing' AND lease_until<?",[now()]);
- const rows=await db.all("SELECT * FROM jobs WHERE status='scheduled' AND due_at<=? ORDER BY due_at LIMIT 10",[now()]);let sent=0;
+ const rows=await db.all(options.kind==='whatsapp'?"SELECT * FROM jobs WHERE kind='whatsapp' AND status='scheduled' AND due_at<=? ORDER BY due_at LIMIT 10":"SELECT * FROM jobs WHERE status='scheduled' AND due_at<=? ORDER BY due_at LIMIT 10",[now()]);let sent=0;
  for(const item of rows){
   const claimed=await db.all("UPDATE jobs SET status='processing',attempts=attempts+1,lease_until=? WHERE id=? AND status='scheduled' RETURNING id",[new Date(Date.now()+120000).toISOString(),item.id]);if(!claimed.length)continue;
   const p=JSON.parse(item.payload);let externalStarted=false;
@@ -148,17 +157,25 @@ export async function processJobs(db,env){
 function socialPayload(p,c,network){const d=JSON.parse(p.data),route=p.kind==='vehicle'?'veiculo':'peca',url=`${c.siteUrl}/${route}/${p.id}?utm_source=${network}&utm_medium=social&utm_campaign=estoque`;
  return {network,product_id:p.id,image:d.image?.startsWith('https:')?d.image:c.siteUrl+(d.image||''),url,caption:`${p.title}\n${d.year?d.year+' • ':''}${d.km||d.compatibility||''}\n${money(p.price)}\n${d.description||'Consulte disponibilidade e condições com nossa equipe.'}\n\nConheça os detalhes: ${url}\nWhatsApp: https://wa.me/${c.whatsapp}\n\n#TradeCar #Repasse #Seminovos #BaixadaSantista`};
 }
-export function integrationStatus(env){return {database:env.MONGO_URI?'MongoDB Atlas · TradeCar':env.TURSO_DATABASE_URL?'Banco externo configurado':'Banco local',whatsapp:!!(env.WHATSAPP_ACCESS_TOKEN&&env.WHATSAPP_PHONE_NUMBER_ID&&env.META_APP_SECRET&&env.WHATSAPP_VERIFY_TOKEN),facebook:!!(env.META_PAGE_ID&&env.META_PAGE_ACCESS_TOKEN),instagram:!!(env.INSTAGRAM_ACCOUNT_ID&&env.META_PAGE_ACCESS_TOKEN),fiscal:!!env.FOCUS_NFE_TOKEN,fiscalEnvironment:env.FOCUS_NFE_PRODUCTION==='true'?'production':'sandbox',metricool:'Configurar conexão na conta exclusiva da TradeCar',scheduler:!!env.CRON_SECRET};}
+export function integrationStatus(env){return {database:env.MONGO_URI?'MongoDB Atlas · TradeCar':env.TURSO_DATABASE_URL?'Banco externo configurado':'Banco local',whatsapp:!!(env.WHATSAPP_ACCESS_TOKEN&&env.WHATSAPP_PHONE_NUMBER_ID&&env.META_APP_SECRET&&env.WHATSAPP_VERIFY_TOKEN),facebook:!!(env.META_PAGE_ID&&env.META_PAGE_ACCESS_TOKEN),instagram:!!(env.INSTAGRAM_ACCOUNT_ID&&env.META_PAGE_ACCESS_TOKEN),fiscal:!!env.FOCUS_NFE_TOKEN,fiscalEnvironment:env.FOCUS_NFE_PRODUCTION==='true'?'production':'sandbox',metricool:'Configurar conexão na conta exclusiva da TradeCar',scheduler:true,configurationWarnings:env.INTEGRATION_RECONNECT_REQUIRED||[]};}
 export async function handle(req,db,env={}){
  const u=new URL(req.url),path=u.pathname,method=req.method,ip=hash(req.headers.get('x-real-ip')||req.headers.get('cf-connecting-ip')||'local');
  try{
+  if(path.startsWith('/images/uploads/')&&['GET','HEAD'].includes(method))return serveImage(req,db,path);
   if((path==='/'||path==='/index.html')&&['GET','HEAD'].includes(method))return storefront(await getConfig(db).catch(()=>defaults));
   if(path==='/api/health') {await db.get('SELECT id FROM migrations LIMIT 1');return json({ok:true,version:'2.0.0',time:now()})}
+  if(path==='/api/webhooks/whatsapp'||path==='/api/admin/state'||path.startsWith('/api/admin/fiscal'))env=await integrationEnvironment(db,env);
   if(path==='/api/webhooks/whatsapp')return await whatsappWebhook(req,db,env);
-  if(path==='/api/cron'){if(!env.CRON_SECRET||!equal(req.headers.get('authorization'),`Bearer ${env.CRON_SECRET}`))fail(401,'Não autorizado.');return json(await processJobs(db,env));}
+  if(path==='/api/cron'){if(!await schedulerAuthorized(req,env))fail(401,'Não autorizado.');return json(await processJobs(db,env));}
   if(path==='/api/catalog'&&method==='GET'){const c=await getConfig(db);const rows=await db.all("SELECT * FROM products WHERE status='available' AND quantity>0 ORDER BY updated_at DESC");return json({products:rows.map(publicProduct),business:{name:c.name,whatsapp:c.whatsapp,email:c.email,location:c.location,hours:c.hours,socialProfiles:c.socialProfiles}});}
   if(path==='/api/leads'&&method==='POST'){safeOrigin(req,env);await rate(db,'lead:'+ip,10,600);const b=await body(req);if(b.website)fail(400,'Ficha inválida.');return json(await lead(db,b),201);}
   if(path==='/api/bot/preview'&&method==='POST'){safeOrigin(req,env);await rate(db,'preview:'+ip,20,60);const b=await body(req);return json({response:await botAnswer(db,text(b.message,1000),'preview')});}
+  if(path==='/api/chat'&&method==='POST'){
+   safeOrigin(req,env);await rate(db,'chat:'+ip,30,60);const b=await body(req),message=text(b.message,1000),c=await getConfig(db);if(!message)fail(400,'Digite sua pergunta.');
+   const human=/\b(humano|atendente|pessoa|executivo|5)\b/i.test(message),stop=/\b(parar|sair|stop|cancelar mensagens)\b/i.test(message);
+   const response=human?'Para um executivo continuar, registre sua ficha no botão abaixo ou abra o WhatsApp comercial. A equipe atende no horário comercial.':stop?'Respostas pausadas nesta conversa. Envie MENU para começar novamente.':await botAnswer(db,message,'web-preview');
+   return json({response:response||'Nosso assistente está pausado. Registre sua ficha ou fale com a equipe no WhatsApp.',handoff:human||!response,paused:stop,botName:c.botName,whatsappUrl:`https://wa.me/${c.whatsapp}`});
+  }
   if(path==='/api/auth/status'){const user=await session(req,db),exists=await db.get('SELECT id FROM admins LIMIT 1');return json({setupRequired:!exists,user:user?{id:user.id,name:user.name,role:user.role}:null,csrf:user?.csrf,local:!env.VERCEL&&['localhost','127.0.0.1'].includes(u.hostname)});}
   if(path==='/api/auth/setup'&&method==='POST'){
    safeOrigin(req,env);await rate(db,'setup:'+ip,5,600);const b=await body(req);const local=!env.VERCEL&&['localhost','127.0.0.1'].includes(u.hostname);if(!local&&(!env.SETUP_TOKEN||!equal(b.token,env.SETUP_TOKEN)))fail(403,'Informe a chave de instalação configurada na hospedagem.');
@@ -178,7 +195,10 @@ export async function handle(req,db,env={}){
    const [products,leads,sales,ledger,jobs,messages,rules,config,events,fiscal,users]=await Promise.all([db.all('SELECT * FROM products ORDER BY updated_at DESC'),db.all('SELECT * FROM leads ORDER BY created_at DESC LIMIT 1000'),db.all('SELECT * FROM sales ORDER BY created_at DESC LIMIT 1000'),user.role==='sales'?[]:db.all('SELECT * FROM ledger ORDER BY created_at DESC LIMIT 1000'),db.all('SELECT * FROM jobs ORDER BY created_at DESC LIMIT 300'),db.all('SELECT * FROM messages ORDER BY created_at DESC LIMIT 300'),db.all('SELECT * FROM bot_rules ORDER BY priority DESC'),getConfig(db),db.all('SELECT * FROM audit ORDER BY id DESC LIMIT 100'),db.all('SELECT * FROM fiscal ORDER BY created_at DESC LIMIT 100'),user.role==='admin'?db.all('SELECT id,name,email,role FROM admins'):[]]);
    return json({products:products.map(p=>user.role==='sales'?{...product(p),cost:undefined}:product(p)),leads:leads.map(l=>({...l,data:JSON.parse(l.data)})),sales,ledger,jobs:jobs.map(job),messages,rules,config,events,fiscal:user.role==='sales'?[]:fiscal,users,integrations:integrationStatus(env)});
   }
+  if(path==='/api/admin/images'&&method==='POST'){if(user.role==='finance')fail(403,'Perfil sem acesso ao estoque.');await rate(db,'photo:'+user.id,100,3600);const photo=await uploadImage(req,db);await audit(db,user.id,'image.upload',photo.url);return json(photo,201);}
+  if(path==='/api/admin/integrations'&&method==='POST'){adminOnly();const b=await body(req);await saveIntegration(db,env,b.service,b);await audit(db,user.id,'integration.save',b.service);return json({ok:true});}
   if(path==='/api/admin/products'&&method==='POST'){
+
    if(user.role==='finance')fail(403,'Perfil sem acesso ao estoque.');const b=await body(req),p=cleanProduct(b),pid=b.id||id(),stamp=now();if(!/^[A-Za-z0-9_-]{1,64}$/.test(pid))fail(400,'Identificador de produto inválido.');const existing=await db.get('SELECT * FROM products WHERE id=?',[pid]);
    if(existing){if(existing.kind!==p.kind)fail(400,'Não altere o tipo de um produto já cadastrado.');const r=await db.run('UPDATE products SET title=?,price=?,cost=?,quantity=?,status=?,data=?,revision=revision+1,updated_at=? WHERE id=? AND revision=?',[p.title,p.price,user.role==='sales'?existing.cost:p.cost,p.quantity,p.status,p.data,stamp,pid,integer(b.revision,1)]);if(Number(r.changes)===0)fail(409,'Outro usuário alterou este item. Atualize o estoque.');if(existing.quantity!==p.quantity)await db.run('INSERT INTO movements(product_id,delta,reason,reference,created_at) VALUES(?,?,?,?,?)',[pid,p.quantity-existing.quantity,'adjustment',user.id,stamp]);}
    else {await db.batch([['INSERT INTO products(id,kind,title,price,cost,quantity,status,data,updated_at) VALUES(?,?,?,?,?,?,?,?,?)',[pid,p.kind,p.title,p.price,p.cost,p.quantity,p.status,p.data,stamp]],['INSERT INTO movements(product_id,delta,reason,reference,created_at) VALUES(?,?,?,?,?)',[pid,p.quantity,'initial',user.id,stamp]]]);}

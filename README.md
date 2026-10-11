@@ -12,17 +12,22 @@ Copie `.env.example` para `.env` e preencha a conexão MongoDB Atlas. A base pr�
 
 O projeto é `vagner`, com domínio https://www.tradecarshop.com.br/. O arquivo `vercel.json` define a construção e a pasta pública. Configure Node 24 nas opções do projeto.
 
-Nas variáveis protegidas da Vercel, salve `MONGO_URI`, `MONGO_DB_NAME=tradecar_shop`, `SITE_URL=https://www.tradecarshop.com.br` e `CRON_SECRET`. Não copie segredos para arquivos públicos. Se a primeira conta já foi criada no painel local conectado ao Atlas, ela será a mesma conta da hospedagem. Caso contrário, a instalação remota exige `SETUP_TOKEN`, que deve ser removido depois de criar a conta.
+Nas variáveis protegidas da Vercel, salve `MONGO_URI`, `MONGO_DB_NAME=tradecar_shop` e `SITE_URL=https://www.tradecarshop.com.br`. Não copie segredos para arquivos públicos. Se a primeira conta já foi criada no painel local conectado ao Atlas, ela será a mesma conta da hospedagem. Caso contrário, a instalação remota exige `SETUP_TOKEN`, que deve ser removido depois de criar a conta.
+
+Carros e peças recebem upload de até 12 fotos por produto. O navegador prepara arquivos JPG, PNG e WebP de até 20 MB; o servidor valida e salva versões WebP de até 1600 pixels no Atlas. A primeira foto é a capa. A escolha de capa e a remoção de fotos da galeria só alteram o produto ao clicar em Salvar. As fotos não dependem do disco temporário da Vercel; inclua a coleção `images` no backup do Atlas. O backup JSON do painel exporta os dados da operação, sem os arquivos das fotos.
 
 O estoque anterior pode ser importado pelo painel como rascunho ou por `node --env-file=.env scripts/import-legacy.mjs`. A importação preserva produtos já cadastrados. Revise disponibilidade, preço, documentação e fotos antes de publicar cada item. Os dados usados nos testes locais são fictícios e ficam fora da base da operação.
 
 ## Atendimento e divulgação
 
 - O WhatsApp comercial é (13) 99620-2124. Fichas do site ficam no banco e abrem uma conversa com os dados preenchidos.
-- O bot usa a API oficial do WhatsApp: configure `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_VERIFY_TOKEN` e `META_APP_SECRET` nas variáveis da hospedagem. O webhook é `/api/webhooks/whatsapp`, com assinatura verificada. Fora da janela de atendimento, o envio livre fica bloqueado. O atendimento pode passar para uma pessoa e as respostas podem ser personalizadas no painel.
+- O chat online do site responde com as regras do painel, consulta o estoque publicado e transfere o interesse e o histórico recente para uma ficha mediante autorização do visitante.
+- O bot usa a API oficial do WhatsApp: informe as credenciais em Configurações → Conectar os serviços, ou configure `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_VERIFY_TOKEN` e `META_APP_SECRET` nas variáveis da hospedagem. O webhook é `/api/webhooks/whatsapp`, com assinatura verificada. Fora da janela de atendimento, o envio livre fica bloqueado. O atendimento pode passar para uma pessoa e as respostas podem ser personalizadas no painel.
 - Facebook e Instagram exigem página, conta profissional vinculada e permissões oficiais: `META_PAGE_ID`, `META_PAGE_ACCESS_TOKEN`, `INSTAGRAM_ACCOUNT_ID` e `META_GRAPH_VERSION`. As publicações começam em rascunho e podem ser agendadas. Produtos indisponíveis bloqueiam novos envios.
 - A conta Metricool exclusiva usa a marca `7366782`. Conecte os perfis nessa conta; o conector que estava conectado a outro projeto não foi usado para escrever conteúdo.
-- A execução recorrente está em `.github/workflows/process-jobs.yml`. Configure o segredo `TRADECAR_CRON_SECRET` igual ao `CRON_SECRET` da Vercel. O agendador executa na branch principal; o GitHub pode atrasar execuções. O painel informa tarefas enviadas, recusadas ou de resultado incerto, sem reenviar automaticamente tarefas incertas.
+- A execução recorrente está em `.github/workflows/process-jobs.yml`. O agendador usa a identidade assinada do GitHub: o servidor confere assinatura, destinatário, IDs imutáveis do repositório e proprietário, branch principal e arquivo de workflow. Não exige cadastrar outra senha. A execução começa após a publicação na branch principal; o GitHub pode atrasar execuções. O painel informa tarefas enviadas, recusadas ou de resultado incerto, sem reenviar automaticamente tarefas incertas. `CRON_SECRET` continua disponível para outro agendador que use uma chave protegida.
+
+As conexões preenchidas no painel são criptografadas com AES-GCM e só podem ser salvas por um administrador. O servidor usa `INTEGRATION_ENCRYPTION_KEY`, quando definida, ou a conexão protegida ao Atlas para derivar a chave. Preserve uma chave fixa se pretende trocar a conexão ao banco sem recadastrar integrações; caso contrário, informe novamente as credenciais dos serviços após a troca. Chaves privadas nunca retornam nas respostas do painel ou do catálogo.
 
 ## Fiscal e busca
 

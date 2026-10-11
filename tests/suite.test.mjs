@@ -6,6 +6,62 @@ import { tmpdir } from 'node:os';
 import { createHmac, randomBytes } from 'node:crypto';
 import { database, migrate } from '../server/db.mjs';
 import { handle, seedRules, now, processJobs } from '../server/core.mjs';
+import sharp from 'sharp';
+import { integrationEnvironment } from '../server/integrations.mjs';
+import { schedulerAuthorized } from '../server/scheduler.mjs';
+import { generateKeyPair,SignJWT } from 'jose';
+
+test('agendador aceita somente token assinado do repositório, workflow e branch autorizados',async()=>{
+ const {privateKey,publicKey}=await generateKeyPair('RS256'),claims={repository_id:'1346612975',repository_owner_id:'201420712',ref:'refs/heads/main',workflow_ref:'VagJr/vagner/.github/workflows/process-jobs.yml@refs/heads/main',event_name:'schedule'};
+ const signed=async(extra={},audience='https://www.tradecarshop.com.br/api/cron',expiration='5m')=>new SignJWT({...claims,...extra}).setProtectedHeader({alg:'RS256'}).setIssuer('https://token.actions.githubusercontent.com').setAudience(audience).setSubject('repo:VagJr@201420712/vagner@1346612975:ref:refs/heads/main').setIssuedAt().setExpirationTime(expiration).sign(privateKey);
+ const allowed=token=>schedulerAuthorized(new Request('https://www.tradecarshop.com.br/api/cron',{headers:{authorization:'Bearer '+token}}),{},publicKey);
+ assert.equal(await allowed(await signed()),true);assert.equal(await allowed(await signed({repository_id:'another'})),false);assert.equal(await allowed(await signed({ref:'refs/heads/other'})),false);assert.equal(await allowed(await signed({event_name:'pull_request'})),false);assert.equal(await allowed(await signed({workflow_ref:'VagJr/vagner/.github/workflows/other.yml@refs/heads/main'})),false);assert.equal(await allowed(await signed({},'https://other.example')),false);assert.equal(await allowed(await signed({},undefined,'-1m')),false);
+ assert.equal(await allowed('invalid-token'),false);
+});
+
+test('conexões são guardadas criptografadas, aplicadas no servidor e restritas ao administrador',async()=>{
+ const f=await fixture();f.env.INTEGRATION_ENCRYPTION_KEY=randomBytes(32).toString('hex');
+ try{
+  const secret='test-token-never-public',save=await f.request('/api/admin/integrations',{service:'whatsapp',WHATSAPP_ACCESS_TOKEN:secret,WHATSAPP_PHONE_NUMBER_ID:'12345678901234',WHATSAPP_VERIFY_TOKEN:'test-verification',META_APP_SECRET:'test-app-secret'});assert.equal(save.status,200);
+  const record=await f.db.get('SELECT value FROM config WHERE id=?',['integration:whatsapp']);assert.ok(!record.value.includes(secret));
+  assert.equal((await integrationEnvironment(f.db,f.env)).WHATSAPP_ACCESS_TOKEN,secret);
+  const state=await f.request('/api/admin/state');assert.equal(state.body.integrations.whatsapp,true);assert.ok(!JSON.stringify(state.body).includes(secret));
+  assert.equal((await f.request('/api/admin/integrations',{service:'whatsapp',WHATSAPP_PHONE_NUMBER_ID:'98765432109876'})).status,200);assert.equal((await integrationEnvironment(f.db,f.env)).WHATSAPP_ACCESS_TOKEN,secret);
+  await f.db.run('UPDATE admins SET role=? WHERE email=?',['sales','test@example.invalid']);assert.equal((await f.request('/api/admin/integrations',{service:'fiscal',FOCUS_NFE_TOKEN:'test-focus'})).status,403);
+ }finally{f.close()}
+});
+
+test('upload exige acesso, valida a foto e persiste uma imagem pública otimizada sem duplicar',async()=>{
+ const f=await fixture();
+ try{
+  const png=await sharp({create:{width:2000,height:300,channels:3,background:'#f97316'}}).png().toBuffer();
+  const login=await f.request('/api/auth/login',{email:'test@example.invalid',password:f.password});
+  const headers={origin:f.env.SITE_URL,cookie:login.headers.get('set-cookie').split(';')[0],'x-csrf-token':login.body.csrf,'content-type':'image/png'};
+  const upload=(body=png,extra={})=>handle(new Request(f.env.SITE_URL+'/api/admin/images',{method:'POST',headers:{...headers,...extra},body}),f.db,f.env);
+  assert.equal((await upload(png,{cookie:''})).status,401);assert.equal((await upload(png,{'x-csrf-token':''})).status,403);
+  assert.equal((await upload(Buffer.from('<svg onload="alert(1)"></svg>'))).status,415);
+  assert.equal((await upload(png,{'content-length':String(4*1024*1024)})).status,413);
+  const uploaded=await upload();assert.equal(uploaded.status,201);const image=await uploaded.json();assert.equal(image.width,1600);assert.match(image.url,/^\/images\/uploads\/[a-f0-9]{64}\.webp$/);
+  assert.equal((await (await upload()).json()).url,image.url);assert.equal((await f.db.get('SELECT COUNT(*) AS n FROM images')).n,1);
+  const publicPhoto=await handle(new Request(f.env.SITE_URL+image.url),f.db,f.env);assert.equal(publicPhoto.status,200);assert.equal(publicPhoto.headers.get('content-type'),'image/webp');assert.equal((await sharp(Buffer.from(await publicPhoto.arrayBuffer())).metadata()).width,1600);
+  assert.equal((await handle(new Request(f.env.SITE_URL+image.url,{headers:{'if-none-match':publicPhoto.headers.get('etag')}}),f.db,f.env)).status,304);
+  const product=await f.request('/api/admin/products',{title:'Produto com foto enviada',kind:'part',price:10000,quantity:1,status:'available',data:{image:image.url}});assert.equal(product.status,200);
+  assert.equal((await f.request('/api/catalog')).body.products[0].data.image,image.url);
+  await f.db.run('UPDATE admins SET role=? WHERE email=?',['finance','test@example.invalid']);assert.equal((await upload()).status,403);
+ }finally{f.close()}
+});
+
+test('chat online responde com regras configuráveis e oferece ficha para atendimento humano',async()=>{
+ const f=await fixture();
+ try{
+  assert.match((await f.request('/api/chat',{message:'financiamento'})).body.response,/#financiamento/);
+  await f.request('/api/admin/rules',{id:'online-rule',title:'Resposta personalizada',keywords:'teste personalizado',response:'Atendimento personalizado da TradeCar.',priority:100,enabled:true});
+  assert.equal((await f.request('/api/chat',{message:'teste personalizado'})).body.response,'Atendimento personalizado da TradeCar.');
+  const human=await f.request('/api/chat',{message:'atendente'});assert.equal(human.body.handoff,true);assert.match(human.body.response,/registre sua ficha/);
+  assert.equal((await f.request('/api/chat',{message:'parar'})).body.paused,true);assert.equal((await f.request('/api/chat',{message:''})).status,400);
+  assert.equal((await f.db.get('SELECT COUNT(*) AS n FROM leads')).n,0);
+ }finally{f.close()}
+});
 
 test('ficha usa nome real do produto e os caminhos do bot existem no site',async()=>{
  const f=await fixture();
