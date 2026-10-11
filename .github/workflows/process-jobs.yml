@@ -1,0 +1,23 @@
+name: Processar atendimento e publicações TradeCar
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: tradecar-jobs
+  cancel-in-progress: false
+jobs:
+  process:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Processar fila autenticada
+        env:
+          CRON_SECRET: ${{ secrets.TRADECAR_CRON_SECRET }}
+        run: |
+          test -n "$CRON_SECRET" || { echo 'Configure TRADECAR_CRON_SECRET no repositório.'; exit 1; }
+          curl --fail-with-body --silent --show-error --max-time 60 \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            'https://www.tradecarshop.com.br/api/cron'

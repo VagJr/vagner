@@ -1,0 +1,11 @@
+import { database,migrate } from '../server/db.mjs';
+import { seedRules, now } from '../server/core.mjs';
+import { randomBytes,scryptSync } from 'node:crypto';
+const db=database({DATABASE_PATH:'data/qa.db'});await migrate(db);await seedRules(db);
+const salt=randomBytes(16).toString('hex'),password=salt+':'+scryptSync('qa-only-local-2026',salt,64).toString('hex');
+await db.run('INSERT OR IGNORE INTO admins(id,name,email,password) VALUES(?,?,?,?)',['qa-admin','Ambiente de testes','qa@example.invalid',password]);
+const data={brand:'Renault',year:'2022/2023',km:'42.000 km',transmission:'Automático CVT',fuel:'Flex',category:'repasse',image:'/images/duster.jpg',description:'Item de teste da plataforma. Não representa uma oferta comercial.'};
+await db.run('INSERT OR IGNORE INTO products(id,kind,title,price,cost,quantity,status,data,updated_at) VALUES(?,?,?,?,?,?,?,?,?)',['qa-vehicle','vehicle','QA · Renault Duster Iconic',7990000,6900000,1,'available',JSON.stringify(data),now()]);
+await db.run('INSERT OR IGNORE INTO products(id,kind,title,price,cost,quantity,status,data,updated_at) VALUES(?,?,?,?,?,?,?,?,?)',['qa-part','part','QA · Câmbio CVT',750000,400000,3,'available',JSON.stringify({code:'QA-CVT',compatibility:'Conjunto de teste',image:'/images/pecas_hero.jpg',description:'Item de teste.'}),now()]);
+await db.run('INSERT OR IGNORE INTO leads(id,name,phone,type,stage,source,data,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?)',['qa-lead','Cliente de teste','5513999999999','vehicle','new','qa',JSON.stringify({vehicle:'Renault Duster',utm_source:'instagram'}),now(),now()]);
+db.close();console.log('Ambiente QA preparado; sem credenciais de serviços externos.');
