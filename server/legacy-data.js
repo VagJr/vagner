@@ -548,7 +548,7 @@ const FAQS_DATA = [
     },
     {
         question: "As peças automotivas possuem nota fiscal e garantia?",
-        answer: "Sim! 100% das nossas peças automotivas (motores, câmbios, lataria, componentes elétricos) são comercializadas em total conformidade com a legislação, acompanhadas de Nota Fiscal Eletrônica e documentação de baixa no Detran para cadastro imediato no seu veículo."
+        answer: "Antes de concluir a compra, confirme com nossa equipe a documentação fiscal, a procedência e os termos de garantia da peça escolhida. Para motores e componentes sujeitos a registro, solicite também a documentação aplicável ao cadastro no Detran."
     },
     {
         question: "Como funciona o financiamento bancário para os veículos?",
